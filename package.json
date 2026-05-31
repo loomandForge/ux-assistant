@@ -14,6 +14,11 @@
   "workspaces": [
     "scoring"
   ],
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
+  },
   "scripts": {
     "build": "npm run build:core",
     "build:core": "npm run build --workspace=scoring && tsc",

@@ -382,6 +382,7 @@ npm run test
 |---|---|---|
 | `Cannot find module better_sqlite3.node` | Bun shim was used | Run via `bin/ux-review-mcp` |
 | NODE_MODULE_VERSION mismatch | Node version differs from install version | `nvm use && npm rebuild better-sqlite3` |
+| `Could not locate the bindings file` after pnpm install | pnpm blocked native build scripts | `npx pnpm install --frozen-lockfile && npx pnpm rebuild better-sqlite3` |
 | Tools not visible | stale client session | restart client and open new chat |
 | `ux-review` disconnected | Node 20 not found | `nvm install 20 && nvm use` |
 
