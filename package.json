@@ -22,7 +22,7 @@
   "scripts": {
     "build": "npm run build:core",
     "build:core": "npm run build --workspace=scoring && tsc",
-    "build:xmcp": "xmcp build --vercel",
+    "build:xmcp": "xmcp build --vercel && node ./scripts/fix-vercel-function-package.cjs",
     "dev": "xmcp dev",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node --test dist/contract.test.js dist/storage.test.js dist/validation-engine.test.js dist/report.test.js dist/server-tools.test.js dist/validators/validators.test.js",
