@@ -1,3 +1,11 @@
 node_modules/
 tsconfig.tsbuildinfo
 .DS_Store
+.xmcp/
+.vercel/
+xmcp-env.d.ts
+dist/http.js
+dist/[0-9]*.js
+dist/prompts/
+dist/resources/
+dist/tools/

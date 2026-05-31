@@ -191,6 +191,7 @@ export declare const analyzeDesignInputSchema: z.ZodObject<{
     webUrl: z.ZodOptional<z.ZodString>;
     imagePath: z.ZodOptional<z.ZodString>;
     htmlSnippet: z.ZodOptional<z.ZodString>;
+    designSystemFigmaUrl: z.ZodOptional<z.ZodString>;
     chatContext: z.ZodOptional<z.ZodString>;
     problemStatement: z.ZodOptional<z.ZodString>;
     proposedSolution: z.ZodOptional<z.ZodString>;
@@ -306,6 +307,7 @@ export declare const analyzeDesignInputSchema: z.ZodObject<{
     webUrl?: string | undefined;
     imagePath?: string | undefined;
     htmlSnippet?: string | undefined;
+    designSystemFigmaUrl?: string | undefined;
     chatContext?: string | undefined;
     problemStatement?: string | undefined;
     proposedSolution?: string | undefined;
@@ -333,6 +335,7 @@ export declare const analyzeDesignInputSchema: z.ZodObject<{
     webUrl?: string | undefined;
     imagePath?: string | undefined;
     htmlSnippet?: string | undefined;
+    designSystemFigmaUrl?: string | undefined;
     chatContext?: string | undefined;
     problemStatement?: string | undefined;
     proposedSolution?: string | undefined;
