@@ -34,6 +34,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.15.30",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "xmcp": "^0.6.10"
   }
 }
