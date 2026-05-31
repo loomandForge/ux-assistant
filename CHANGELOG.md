@@ -22,6 +22,9 @@ The format is based on Keep a Changelog and this project aims to follow Semantic
 - README now includes build/security/pages badges and quick policy links.
 - `reviewInput` ingestion flow now delegates to dedicated adapters instead of centralized branch logic.
 - Knowledge context retrieval now returns ranked items for run-level context hydration.
+- Repository packaging now uses the `xmcp` deployment path with a dedicated `build:xmcp` script and Vercel build command.
+- CI and lockfile handling are aligned around `pnpm`, including workspace metadata for the local `scoring` package.
+- `better-sqlite3` native builds are now explicitly allowed under pnpm-based installs to keep local and CI test environments working.
 
 ## [0.1.0] - 2026-05-29
 
