@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+set -eu
+
+# Prevent recursive re-entry if merge triggers this hook again.
+if [ "${AUTO_UPDATE_RUNNING:-0}" = "1" ]; then
+  exit 0
+fi
+
+export AUTO_UPDATE_RUNNING=1
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+"$REPO_ROOT/scripts/auto-update.sh" main || true

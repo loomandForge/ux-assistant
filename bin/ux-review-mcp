@@ -1,0 +1,75 @@
+#!/bin/sh
+# Launcher for ux-review-mcp — resolves the correct Node.js binary.
+#
+# Why this exists:
+#   Some MCP clients inject a Bun-based "node" shim into PATH. Since this MCP
+#   uses better-sqlite3 (native addon), it MUST run under real Node.js at
+#   the same major version it was compiled against (see .nvmrc).
+#
+# Resolution order:
+#   1. NVM_DIR / .nvmrc — preferred, matches compiled native modules
+#   2. Common paths filtered by major version
+#   3. Any real Node.js (not Bun) as last resort
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+REQUIRED_MAJOR=""
+
+# Read required major version from .nvmrc
+if [ -f "$SCRIPT_DIR/.nvmrc" ]; then
+  REQUIRED_MAJOR=$(sed 's/^v//; s/\..*//' "$SCRIPT_DIR/.nvmrc")
+fi
+
+is_real_node() {
+  [ -x "$1" ] && "$1" -e "process.exit(typeof Bun !== 'undefined' ? 1 : 0)" 2>/dev/null
+}
+
+matches_major() {
+  if [ -z "$REQUIRED_MAJOR" ]; then return 0; fi
+  ver=$("$1" -v 2>/dev/null | sed 's/^v//; s/\..*//')
+  [ "$ver" = "$REQUIRED_MAJOR" ]
+}
+
+find_node() {
+  # 1. nvm — check for exact major version match
+  NVM_ROOT="${NVM_DIR:-$HOME/.nvm}"
+  if [ -d "$NVM_ROOT/versions/node" ] && [ -n "$REQUIRED_MAJOR" ]; then
+    for dir in "$NVM_ROOT"/versions/node/v${REQUIRED_MAJOR}.*/bin/node; do
+      if is_real_node "$dir" && matches_major "$dir"; then
+        echo "$dir"
+        return 0
+      fi
+    done
+  fi
+
+  # 2. Common install paths — match major version
+  for candidate in /usr/local/bin/node /opt/homebrew/bin/node /usr/bin/node; do
+    if is_real_node "$candidate" && matches_major "$candidate"; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+
+  # 3. Fallback: any real Node.js in PATH (skip Bun shims)
+  OLDIFS="$IFS"; IFS=':'
+  for p in $PATH; do
+    if is_real_node "$p/node"; then
+      IFS="$OLDIFS"
+      echo "$p/node"
+      return 0
+    fi
+  done
+  IFS="$OLDIFS"
+
+  return 1
+}
+
+NODE_BIN=$(find_node)
+if [ -z "$NODE_BIN" ]; then
+  echo "ERROR: Cannot find Node.js v${REQUIRED_MAJOR:-any}." >&2
+  echo "Install via: nvm install ${REQUIRED_MAJOR:-20}" >&2
+  exit 1
+fi
+
+exec "$NODE_BIN" "$SCRIPT_DIR/dist/cli.js" "$@"

@@ -1,0 +1,1 @@
+{"version":3,"file":"guideline.d.ts","sourceRoot":"","sources":["../src/guideline.ts"],"names":[],"mappings":"AAEA,OAAO,EAAE,kBAAkB,EAAE,MAAM,aAAa,CAAC;AAEjD,MAAM,WAAW,4BAA4B;IAC3C,GAAG,EAAE,kBAAkB,CAAC;IACxB,KAAK,EAAE,MAAM,CAAC;IACd,OAAO,EAAE,MAAM,CAAC;CACjB;AAuBD;;GAEG;AACH,eAAO,MAAM,uBAAuB,GAClC,eAAe,MAAM,KACpB,OAAO,CAAC,4BAA4B,EAAE,CAqBxC,CAAC"}

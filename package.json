@@ -1,0 +1,39 @@
+{
+  "name": "@ux-assistant/ux-review-mcp",
+  "version": "0.1.0",
+  "description": "UX review MCP server with scoring library",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "bin": {
+    "ux-review-mcp": "./bin/ux-review-mcp"
+  },
+  "workspaces": [
+    "scoring"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=scoring && tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test dist/contract.test.js dist/storage.test.js dist/validation-engine.test.js dist/report.test.js dist/server-tools.test.js dist/validators/validators.test.js",
+    "start": "node dist/cli.js",
+    "auto-update:enable": "sh ./scripts/enable-auto-update.sh",
+    "auto-update:pull": "sh ./scripts/auto-update.sh main",
+    "verify:contract": "npm run build && node dist/contract-check.js",
+    "verify:scenarios": "npm run build && node dist/scenario-check.js",
+    "verify:phase8": "npm run verify:contract && npm run verify:scenarios"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@ux-assistant/scoring": "*",
+    "better-sqlite3": "^11.7.0",
+    "playwright-core": "^1.52.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.15.30",
+    "typescript": "^5.7.0"
+  }
+}

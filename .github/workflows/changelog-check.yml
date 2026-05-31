@@ -1,0 +1,41 @@
+name: Changelog Check
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate changelog update for code changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base_ref="origin/${{ github.base_ref }}"
+          git fetch origin "${{ github.base_ref }}"
+
+          changed_files=$(git diff --name-only "$base_ref...HEAD")
+          echo "Changed files:"
+          echo "$changed_files"
+
+          code_changed=$(echo "$changed_files" | grep -E '^(src/|scoring/src/|package.json|package-lock.json|scoring/package.json|bin/|scripts/)' || true)
+          changelog_changed=$(echo "$changed_files" | grep -E '^CHANGELOG.md$' || true)
+
+          if [[ -n "$code_changed" && -z "$changelog_changed" ]]; then
+            echo "Code or packaging changes detected, but CHANGELOG.md was not updated."
+            echo "Please add an entry under [Unreleased] in CHANGELOG.md."
+            exit 1
+          fi
+
+          echo "Changelog check passed."
