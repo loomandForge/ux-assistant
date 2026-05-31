@@ -9,3 +9,5 @@ dist/[0-9]*.js
 dist/prompts/
 dist/resources/
 dist/tools/
+.vercel
+.env*
