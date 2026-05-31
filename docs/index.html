@@ -3,211 +3,155 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="ux_assistant is an MCP server for UX review and context-aware design validation." />
+    <meta
+      name="description"
+      content="ux_assistant is an MCP server for UX review and context-aware design validation."
+    />
     <title>ux_assistant | UX Review MCP</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="grain"></div>
-    <header class="hero">
-      <p class="eyebrow">MCP SERVER</p>
-      <h1>ux_assistant</h1>
-      <p class="lead">Run UX reviews, challenge assumptions, and validate outputs against project context packs.</p>
-      <div class="cta-row">
-        <a class="btn primary" href="https://github.com/gigithk/ux_assistant" target="_blank" rel="noreferrer">View on GitHub</a>
-        <a class="btn ghost" href="https://github.com/gigithk/ux_assistant/blob/main/README.md" target="_blank" rel="noreferrer">Read Docs</a>
-      </div>
+    <header class="site-head wrap" id="top">
+      <a class="brand" href="#top">ux_assistant</a>
+      <nav>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#tools">Tools</a>
+        <a href="#start">Quick Start</a>
+      </nav>
     </header>
 
-    <main>
-      <section class="panel">
-        <h2>What It Does</h2>
-        <div class="grid three">
-          <article>
-            <h3>Review</h3>
-            <p>Review Figma links, web pages, images, or HTML and get structured UX feedback.</p>
-          </article>
-          <article>
-            <h3>Challenge</h3>
-            <p>Pressure-test UX decisions to expose edge cases, friction points, and hidden risks.</p>
-          </article>
-          <article>
-            <h3>Improve</h3>
-            <p>Convert findings into prioritized, actionable recommendations for shipping teams.</p>
-          </article>
+    <main class="wrap">
+      <section class="hero">
+        <p class="kicker">MCP SERVER FOR UX TEAMS</p>
+        <h1>Audit design quality with context, not guesswork.</h1>
+        <p class="hero-copy">
+          ux_assistant reviews Figma links, web pages, screenshots, and HTML, then validates outputs against project rules and context packs so teams can ship with confidence.
+        </p>
+        <div class="hero-actions">
+          <a class="hero-link" href="https://github.com/gigithk/ux_assistant" target="_blank" rel="noreferrer">GitHub</a>
+          <a class="hero-link" href="https://github.com/gigithk/ux_assistant/blob/main/README.md" target="_blank" rel="noreferrer">Documentation</a>
         </div>
       </section>
 
-      <section class="panel accent">
-        <h2>Core MCP Tools</h2>
-        <div class="grid two">
-          <ul>
-            <li><code>review_figma</code></li>
-            <li><code>review_input</code></li>
-            <li><code>challenge_design</code></li>
-            <li><code>improve_design</code></li>
-            <li><code>pitch_design</code></li>
-          </ul>
-          <ul>
-            <li><code>create_project</code></li>
-            <li><code>add_context_rule</code></li>
-            <li><code>create_context_pack</code></li>
-            <li><code>validate_output_against_context</code></li>
-            <li><code>compare_validation_runs</code></li>
-          </ul>
+      <section id="capabilities" class="section">
+        <div class="section-head">
+          <p class="kicker">WHAT IT DOES</p>
+          <h2>One platform, two operating modes</h2>
         </div>
-      </section>
-
-      <section class="panel architecture">
-        <h2>Architecture at a Glance</h2>
-        <p class="sub">Input -> MCP Server -> Review Tools / Validation Tools -> Scoring Engine -> Report / Correction Prompt / Comparison</p>
-        <div class="arch-flow">
-          <div class="arch-stage">
-            <p class="arch-label">Stage 1</p>
-            <div class="arch-chip">Input</div>
-          </div>
-          <div class="arch-arrow">&rarr;</div>
-          <div class="arch-stage core">
-            <p class="arch-label">Stage 2</p>
-            <div class="arch-chip">MCP Server</div>
-          </div>
-          <div class="arch-arrow">&rarr;</div>
-          <div class="arch-stage">
-            <p class="arch-label">Stage 3</p>
-            <div class="arch-chip-row two">
-              <div class="arch-chip">Review Tools</div>
-              <div class="arch-chip">Validation Tools</div>
-            </div>
-          </div>
-          <div class="arch-arrow">&rarr;</div>
-          <div class="arch-stage core">
-            <p class="arch-label">Stage 4</p>
-            <div class="arch-chip">Scoring Engine</div>
-          </div>
-          <div class="arch-arrow">&rarr;</div>
-          <div class="arch-stage">
-            <p class="arch-label">Stage 5</p>
-            <div class="arch-chip-row three">
-              <div class="arch-chip">Report</div>
-              <div class="arch-chip">Correction Prompt</div>
-              <div class="arch-chip">Comparison</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel architecture-detail">
-        <h2>Adapter and Ranking Flow</h2>
-        <p class="sub">Dedicated adapters isolate ingestion logic, then ranked retrieval selects the most relevant knowledge context.</p>
-        <div class="arch-detail-grid">
-          <article class="arch-detail-card">
-            <h3>Input Adapters</h3>
-            <ul>
-              <li><code>brief-adapter</code> normalizes problem, solution, and requirements.</li>
-              <li><code>figma-adapter</code> handles Figma tools and optional sampled context.</li>
-              <li><code>image-adapter</code> handles web, HTML, and direct image ingestion.</li>
+        <div class="cap-grid">
+          <article class="card">
+            <h3>Review mode</h3>
+            <p>
+              Generate UX critique, identify friction and edge cases, and produce practical recommendations grounded in source evidence.
+            </p>
+            <ul class="tool-list">
+              <li><span class="tool">review_figma</span></li>
+              <li><span class="tool">review_input</span></li>
+              <li><span class="tool">challenge_design</span></li>
+              <li><span class="tool">improve_design</span></li>
+              <li><span class="tool">pitch_design</span></li>
             </ul>
           </article>
-          <article class="arch-detail-card">
-            <h3>Scoring and Storage</h3>
-            <ul>
-              <li>Adapters produce a normalized scoring bundle.</li>
-              <li>Pipeline runs deterministic scoring and LLM narrative enrichment.</li>
-              <li>Run artifacts, findings, and context metadata are persisted.</li>
-            </ul>
-          </article>
-          <article class="arch-detail-card">
-            <h3>Ranked Retrieval</h3>
-            <ul>
-              <li>Knowledge items are ranked by priority, matched tags, and scope weighting.</li>
-              <li>Session/project/user/organization candidates are merged and deduplicated.</li>
-              <li>Top-ranked items and relationships are injected into lens rendering.</li>
+          <article class="card">
+            <h3>Validation mode</h3>
+            <p>
+              Enforce approved context rules, score compliance, generate correction prompts, and track regression across validation runs.
+            </p>
+            <ul class="tool-list">
+              <li><span class="tool">create_project</span></li>
+              <li><span class="tool">add_context_rule</span></li>
+              <li><span class="tool">create_context_pack</span></li>
+              <li><span class="tool">validate_output_against_context</span></li>
+              <li><span class="tool">compare_validation_runs</span></li>
             </ul>
           </article>
         </div>
       </section>
 
-      <section class="panel architecture-map">
-        <h2>Module Mapping</h2>
-        <p class="sub">Each stage in the review pipeline maps to explicit source modules for easier maintenance and onboarding.</p>
-        <div class="module-map-grid">
-          <article class="module-map-card">
+      <section id="pipeline" class="section split">
+        <div class="section-head">
+          <p class="kicker">ARCHITECTURE</p>
+          <h2>From raw input to actionable correction</h2>
+          <p class="muted">A deterministic pipeline keeps results consistent and comparable.</p>
+        </div>
+        <ol class="pipeline">
+          <li>
+            <p class="step">01</p>
+            <h3>Input ingestion</h3>
+            <p>Accept Figma links, webpages, screenshots, image files, or HTML snippets.</p>
+          </li>
+          <li>
+            <p class="step">02</p>
+            <h3>MCP orchestration</h3>
+            <p>Dispatch review and validation paths through a shared server pipeline.</p>
+          </li>
+          <li>
+            <p class="step">03</p>
+            <h3>Scoring engine</h3>
+            <p>Apply rule findings and severity weighting to compute compliance outcomes.</p>
+          </li>
+          <li>
+            <p class="step">04</p>
+            <h3>Narrative output</h3>
+            <p>Return reports, correction prompts, and run-to-run deltas for teams.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="tools" class="section">
+        <div class="section-head">
+          <p class="kicker">MODULE MAP</p>
+          <h2>Source-level ownership by stage</h2>
+        </div>
+        <div class="module-grid">
+          <article>
             <h3>Stage 1: Ingestion</h3>
-            <ul>
-              <li><code>src/adapters/brief-adapter.ts</code></li>
-              <li><code>src/adapters/figma-adapter.ts</code></li>
-              <li><code>src/adapters/image-adapter.ts</code></li>
-              <li><code>src/input-detect.ts</code></li>
-            </ul>
+            <p>src/adapters/brief-adapter.ts</p>
+            <p>src/adapters/figma-adapter.ts</p>
+            <p>src/adapters/image-adapter.ts</p>
+            <p>src/input-detect.ts</p>
           </article>
-          <article class="module-map-card">
+          <article>
             <h3>Stage 2: Orchestration</h3>
-            <ul>
-              <li><code>src/pipeline.ts</code></li>
-              <li><code>src/server.ts</code></li>
-              <li><code>src/stages.ts</code></li>
-            </ul>
+            <p>src/pipeline.ts</p>
+            <p>src/server.ts</p>
+            <p>src/stages.ts</p>
           </article>
-          <article class="module-map-card">
-            <h3>Stage 3: Scoring and Validation</h3>
-            <ul>
-              <li><code>src/validation-engine.ts</code></li>
-              <li><code>src/design-system-evidence.ts</code></li>
-              <li><code>scoring/src/types.ts</code></li>
-            </ul>
+          <article>
+            <h3>Stage 3: Scoring</h3>
+            <p>src/validation-engine.ts</p>
+            <p>src/design-system-evidence.ts</p>
+            <p>scoring/src/types.ts</p>
           </article>
-          <article class="module-map-card">
-            <h3>Stage 4: Context Retrieval</h3>
-            <ul>
-              <li><code>src/storage.ts</code></li>
-              <li><code>src/contract.ts</code></li>
-              <li><code>src/context-gather.ts</code></li>
-            </ul>
+          <article>
+            <h3>Stage 4: Context</h3>
+            <p>src/storage.ts</p>
+            <p>src/contract.ts</p>
+            <p>src/context-gather.ts</p>
           </article>
-          <article class="module-map-card">
-            <h3>Stage 5: Output and Narrative</h3>
-            <ul>
-              <li><code>src/llm.ts</code></li>
-              <li><code>src/report.ts</code></li>
-              <li><code>src/detail.ts</code></li>
-            </ul>
+          <article>
+            <h3>Stage 5: Output</h3>
+            <p>src/llm.ts</p>
+            <p>src/report.ts</p>
+            <p>src/detail.ts</p>
           </article>
         </div>
       </section>
 
-      <section class="panel">
-        <h2>Context and Validation Tools</h2>
-        <div class="grid three">
-          <article>
-            <h3><code>create_project</code></h3>
-            <p>Initialize a project workspace so reviews and rules stay organized by product area.</p>
-          </article>
-          <article>
-            <h3><code>add_context_rule</code></h3>
-            <p>Add constraints and quality criteria, such as accessibility, tone, or brand rules.</p>
-          </article>
-          <article>
-            <h3><code>create_context_pack</code></h3>
-            <p>Bundle rules and scenario context into a reusable pack for consistent validation runs.</p>
-          </article>
-          <article>
-            <h3><code>validate_output_against_context</code></h3>
-            <p>Score an output against the active context pack and return pass/fail evidence with reasons.</p>
-          </article>
-          <article>
-            <h3><code>compare_validation_runs</code></h3>
-            <p>Compare two or more validation runs to measure regression risk and improvement over time.</p>
-          </article>
+      <section class="section samples">
+        <div class="section-head">
+          <p class="kicker">OUTPUT EXAMPLES</p>
+          <h2>Structured artifacts ready for teams</h2>
         </div>
-      </section>
-
-      <section class="panel">
-        <h2>Sample Outputs</h2>
-        <div class="grid three">
-          <article class="sample-card">
+        <div class="sample-grid">
+          <article>
             <h3>UX review report</h3>
             <pre><code>{
   "runId": "run_01J4Q0F8A5...",
@@ -215,8 +159,8 @@
   "score": 78
 }</code></pre>
           </article>
-          <article class="sample-card">
-            <h3>Context validation result</h3>
+          <article>
+            <h3>Context validation</h3>
             <pre><code>{
   "overallCompliance": "partial",
   "complianceScore": 0.71,
@@ -224,7 +168,7 @@
   "partial": 3
 }</code></pre>
           </article>
-          <article class="sample-card">
+          <article>
             <h3>Correction prompt</h3>
             <pre><code>Fix failed UX constraints:
 1) Use design tokens only
@@ -237,31 +181,33 @@ plus change-to-rule map.</code></pre>
         </div>
       </section>
 
-      <section class="panel accent">
-        <h2>Why This Matters for UX Teams</h2>
-        <p>
-          UX teams increasingly work across fragmented tools, AI agents, and product-specific design rules.
-          This project explores how an MCP server can act as a context bridge, allowing AI tools to review
-          and validate design outputs against approved UX principles, design-system rules, and project constraints.
-        </p>
+      <section class="section closing">
+        <article>
+          <p class="kicker">WHY THIS MATTERS</p>
+          <h2>Move from subjective feedback to repeatable quality checks.</h2>
+          <p>
+            ux_assistant helps teams run UX governance with measurable evidence. Instead of isolated opinions,
+            teams get shared standards, tracked compliance, and clearer remediation paths.
+          </p>
+        </article>
+        <article>
+          <p class="kicker">ROADMAP</p>
+          <ul class="roadmap-list">
+            <li>Figma variable and component ingestion</li>
+            <li>Visual screenshot validation</li>
+            <li>Accessibility heuristics</li>
+            <li>Design token compliance checks</li>
+            <li>UX debt and trend tracking</li>
+            <li>Workflow integrations (Slack, Jira, Figma)</li>
+          </ul>
+        </article>
       </section>
 
-      <section class="panel">
-        <h2>Roadmap</h2>
-        <ul class="roadmap-list">
-          <li>Figma variable/component ingestion</li>
-          <li>Visual screenshot validation</li>
-          <li>Accessibility heuristics</li>
-          <li>Design token compliance</li>
-          <li>UX debt tracking</li>
-          <li>Team dashboards</li>
-          <li>Slack / Jira / Figma integration</li>
-          <li>Portfolio-level UX governance metrics</li>
-        </ul>
-      </section>
-
-      <section class="panel">
-        <h2>Quick Start</h2>
+      <section id="start" class="section quickstart">
+        <div class="section-head">
+          <p class="kicker">QUICK START</p>
+          <h2>Run locally in minutes</h2>
+        </div>
         <pre><code>git clone git@github.com:gigithk/ux_assistant.git
 cd ux_assistant
 nvm install 20
@@ -271,7 +217,7 @@ npm run build</code></pre>
       </section>
     </main>
 
-    <footer>
+    <footer class="wrap foot">
       <p>Built for practical UX workflows with MCP-native automation.</p>
     </footer>
   </body>
