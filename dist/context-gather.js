@@ -24,7 +24,8 @@ export function clientSupportsSampling(server) {
  */
 export function clientSupportsToolsInSampling(server) {
     const caps = server.getClientCapabilities();
-    return !!caps?.sampling?.tools;
+    const samplingCaps = caps?.sampling;
+    return !!samplingCaps?.tools;
 }
 /**
  * Gather additional design context by asking the host LLM to use available tools.
@@ -136,8 +137,6 @@ Use whatever tools are available (Figma, browser, filesystem, etc.) to gather re
                 }
             ],
             maxTokens: options.maxTokens ?? 3000,
-            toolChoice: { mode: 'auto' },
-            tools: [], // Empty array signals: use whatever tools the client has
             modelPreferences: {
                 hints: [{ name: 'claude-sonnet-4-20250514' }, { name: 'gpt-4o' }]
             }

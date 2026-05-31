@@ -86,6 +86,7 @@ export const analyzeDesignInputSchema = z.object({
     webUrl: z.string().optional(),
     imagePath: z.string().optional(),
     htmlSnippet: z.string().optional(),
+    designSystemFigmaUrl: z.string().optional(),
     chatContext: z.string().optional(),
     problemStatement: z.string().optional(),
     proposedSolution: z.string().optional(),

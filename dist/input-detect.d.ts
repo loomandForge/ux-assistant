@@ -4,6 +4,7 @@ export interface ReviewInputRequest {
     webUrl?: string;
     imagePath?: string;
     htmlSnippet?: string;
+    designSystemFigmaUrl?: string;
     chatContext?: string;
     problemStatement?: string;
     proposedSolution?: string;
