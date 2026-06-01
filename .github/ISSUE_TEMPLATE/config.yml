@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security reports
-    url: https://github.com/gigithk/ux_assistant/security/advisories/new
+    url: https://github.com/loomandForge/ux-assistant/security/advisories/new
     about: Report vulnerabilities privately.
