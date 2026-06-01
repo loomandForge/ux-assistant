@@ -2,11 +2,12 @@
 
 MCP server for UX reviews and context-aware design validation with scoring and actionable improvements.
 
-[![CI](https://github.com/gigithk/ux_assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/gigithk/ux_assistant/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/gigithk/ux_assistant/actions/workflows/codeql.yml/badge.svg)](https://github.com/gigithk/ux_assistant/actions/workflows/codeql.yml)
-[![Pages](https://github.com/gigithk/ux_assistant/actions/workflows/pages.yml/badge.svg)](https://github.com/gigithk/ux_assistant/actions/workflows/pages.yml)
+[![CI](https://github.com/loomandForge/ux-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/loomandForge/ux-assistant/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/loomandForge/ux-assistant/actions/workflows/codeql.yml/badge.svg)](https://github.com/loomandForge/ux-assistant/actions/workflows/codeql.yml)
+[![Pages](https://github.com/loomandForge/ux-assistant/actions/workflows/pages.yml/badge.svg)](https://github.com/loomandForge/ux-assistant/actions/workflows/pages.yml)
 
-- Website: `https://gigithk.github.io/ux_assistant/`
+- Website: `https://loomandforge.github.io/ux-assistant/`
+- Live deployment (Vercel): `https://ux-assistant-kmpsrj7gu-gigithks-projects.vercel.app/`
 - Security policy: [SECURITY.md](SECURITY.md)
 - Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
