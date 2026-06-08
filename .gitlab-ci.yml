@@ -12,42 +12,34 @@ stages:
 variables:
   NPM_CONFIG_FUND: "false"
   NPM_CONFIG_AUDIT: "false"
-  NPM_CONFIG_LEGACY_PEER_DEPS: "true"
   NPM_CONFIG_PRODUCTION: "false"
   NODE_ENV: "development"
+  PNPM_VERSION: "10.34.1"
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
-    - .npm/
+    - .pnpm-store/
     - node_modules/
-    - scoring/node_modules/
 
 before_script:
   - node --version
-  - npm --version
-  - npm config set cache .npm --global
-  - npm config set fetch-retries 5 --global
-  - npm config set fetch-retry-factor 2 --global
-  - npm config set fetch-retry-mintimeout 20000 --global
-  - npm config set fetch-retry-maxtimeout 120000 --global
+  - corepack enable
+  - corepack prepare pnpm@${PNPM_VERSION} --activate
+  - pnpm --version
+  - pnpm config set store-dir .pnpm-store
   - |
     if [ -n "$NPM_REGISTRY_AUTH_PATH" ] && [ -n "$NPM_AUTH_TOKEN" ]; then
-      echo "Configuring npm auth for custom registry"
-      npm config set "//${NPM_REGISTRY_AUTH_PATH}:_authToken" "$NPM_AUTH_TOKEN"
+      echo "Configuring pnpm auth for custom registry"
+      pnpm config set "//${NPM_REGISTRY_AUTH_PATH}:_authToken" "$NPM_AUTH_TOKEN"
     fi
-  - |
-    npm ci --include=dev --include-workspace-root --workspaces && exit 0
-    echo "npm ci failed, retrying once..."
-    npm ci --include=dev --include-workspace-root --workspaces && exit 0
-    echo "npm ci failed again, falling back to npm install"
-    npm install --include=dev --include-workspace-root --workspaces
-  - npx tsc --version
+  - pnpm i --frozen-lockfile
+  - pnpm exec tsc --version
 
 build:
   stage: build
   script:
-    - npm run build
+    - pnpm run build
   artifacts:
     expire_in: 1 week
     paths:
@@ -57,18 +49,15 @@ build:
 verify:
   stage: verify
   script:
-    - npm run verify:phase8
+    - pnpm run verify:phase8
 
-# Completely override inherited test job
 test:
   image: node:20
   stage: test
-  before_script: []
-  after_script: []
   script:
-    - npm ci --legacy-peer-deps
+    - pnpm run typecheck
+    - pnpm test
   artifacts: {}
-  allow_failure: true
   only:
     - main
     - merge_requests

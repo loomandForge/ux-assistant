@@ -98,7 +98,7 @@ export const buildCorrectionPrompt = ({
 
   const source = actionable.length > 0 ? actionable : findings.slice(0, maxItems);
   const instructions = source.map((item, index) =>
-    `${index + 1}. ${item.recommendation} (rule=${item.ruleId}, evidence=${item.evidence})`
+    `${index + 1}. ${item.recommendation} Fix: ${item.correctionPrompt} (rule=${item.ruleId}, evidence=${item.evidence})`
   );
 
   return [
