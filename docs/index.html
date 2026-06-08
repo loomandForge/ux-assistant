@@ -5,220 +5,348 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="ux_assistant is an MCP server for UX review and context-aware design validation."
+      content="ux_assistant is an open-source UX quality gate for AI-built interfaces, MCP reviews, context validation, and correction prompts."
     />
-    <title>ux_assistant | UX Review MCP</title>
+    <title>ux_assistant | UX quality gates for AI-built interfaces</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="site-head wrap" id="top">
-      <a class="brand" href="#top">ux_assistant</a>
-      <nav>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="ux_assistant home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>ux_assistant</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="#product">Product</a>
         <a href="#capabilities">Capabilities</a>
-        <a href="#pipeline">Pipeline</a>
-        <a href="#tools">Tools</a>
-        <a href="#start">Quick Start</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#setup">Setup</a>
+        <a href="https://github.com/loomandForge/ux-assistant" target="_blank" rel="noreferrer">GitHub</a>
       </nav>
     </header>
 
-    <main class="wrap">
-      <section class="hero">
-        <p class="kicker">MCP SERVER FOR UX TEAMS</p>
-        <h1>Audit design quality with context, not guesswork.</h1>
-        <p class="hero-copy">
-          ux_assistant reviews Figma links, web pages, screenshots, and HTML, then validates outputs against project rules and context packs so teams can ship with confidence.
-        </p>
-        <div class="hero-actions">
-          <a class="hero-link" href="https://github.com/loomandForge/ux-assistant" target="_blank" rel="noreferrer">GitHub</a>
-          <a class="hero-link" href="https://github.com/loomandForge/ux-assistant/blob/main/README.md" target="_blank" rel="noreferrer">Documentation</a>
+    <main id="top">
+      <section class="hero" id="product">
+        <div class="hero-copy">
+          <h1>Ship AI-built interfaces with UX guardrails.</h1>
+          <p>
+            ux_assistant reviews Figma, web, image, and HTML inputs against project rules, then
+            turns findings into scores, reports, and correction prompts before your team ships.
+          </p>
+          <div class="hero-actions" aria-label="Primary links">
+            <a class="button primary" href="https://github.com/loomandForge/ux-assistant" target="_blank" rel="noreferrer">View on GitHub</a>
+            <a class="button secondary" href="https://github.com/loomandForge/ux-assistant/blob/main/README.md" target="_blank" rel="noreferrer">Read the docs</a>
+          </div>
+        </div>
+
+        <section class="report-shell" aria-label="UX review report preview">
+          <div class="report-topbar">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="window-title">ux review run / checkout-v2</span>
+          </div>
+          <div class="report-grid">
+            <div class="score-panel">
+              <p class="label">Overall UX alignment</p>
+              <div class="score-ring" aria-label="78 percent score">
+                <span>78</span>
+              </div>
+              <p class="score-note">Ready for iteration with two high-priority fixes.</p>
+            </div>
+            <div class="findings-panel">
+              <div class="panel-head">
+                <p class="label">Top findings</p>
+                <span class="status-tag">review_input</span>
+              </div>
+              <ul class="finding-list">
+                <li>
+                  <span class="severity high">High</span>
+                  <span>Competing primary actions in the first viewport</span>
+                </li>
+                <li>
+                  <span class="severity medium">Medium</span>
+                  <span>Error-state contrast needs measurable evidence</span>
+                </li>
+                <li>
+                  <span class="severity low">Low</span>
+                  <span>Secondary copy can move behind progressive disclosure</span>
+                </li>
+              </ul>
+            </div>
+            <div class="rules-panel">
+              <p class="label">Context rules</p>
+              <div class="rule-row">
+                <span>One primary CTA per step</span>
+                <strong>fail</strong>
+              </div>
+              <div class="rule-row">
+                <span>Use tokenized color values</span>
+                <strong>partial</strong>
+              </div>
+              <div class="rule-row">
+                <span>Preserve information architecture</span>
+                <strong>pass</strong>
+              </div>
+            </div>
+            <div class="prompt-panel">
+              <p class="label">Correction prompt</p>
+              <pre><code>Fix failed UX constraints:
+1. Keep one dominant primary CTA.
+2. Replace hard-coded colors with tokens.
+3. Return a change-to-rule map.</code></pre>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="proof-strip" aria-label="Project proof points">
+        <div>
+          <strong>Open-source MCP server</strong>
+          <span>Local review workflow works today.</span>
+        </div>
+        <div>
+          <strong>Context-aware reviews</strong>
+          <span>Project rules and memory shape the output.</span>
+        </div>
+        <div>
+          <strong>Rule-based validation</strong>
+          <span>Compare runs and generate correction prompts.</span>
+        </div>
+        <div>
+          <strong>GitHub Pages docs</strong>
+          <span>Public setup, security, and roadmap in one place.</span>
         </div>
       </section>
 
-      <section id="capabilities" class="section">
-        <div class="section-head">
-          <p class="kicker">WHAT IT DOES</p>
-          <h2>One platform, two operating modes</h2>
+      <section class="section" id="capabilities">
+        <div class="section-heading">
+          <span class="section-number">01</span>
+          <h2>Turn fast AI output into reviewable product evidence.</h2>
+          <p>
+            Keep the speed of AI-generated design and code, then add the UX checks product teams
+            expect before merge, demo, or stakeholder review.
+          </p>
         </div>
-        <div class="cap-grid">
-          <article class="card">
-            <h3>Review mode</h3>
+        <div class="capability-grid">
+          <article>
+            <span class="cap-icon" aria-hidden="true">I</span>
+            <h3>Review every input</h3>
             <p>
-              Generate UX critique, identify friction and edge cases, and produce practical recommendations grounded in source evidence.
+              Run UX critique from Figma links, web pages, screenshots, image files, HTML snippets,
+              or detected chat context.
             </p>
-            <ul class="tool-list">
-              <li><span class="tool">review_figma</span></li>
-              <li><span class="tool">review_input</span></li>
-              <li><span class="tool">challenge_design</span></li>
-              <li><span class="tool">improve_design</span></li>
-              <li><span class="tool">pitch_design</span></li>
-            </ul>
           </article>
-          <article class="card">
-            <h3>Validation mode</h3>
+          <article>
+            <span class="cap-icon" aria-hidden="true">R</span>
+            <h3>Enforce team rules</h3>
             <p>
-              Enforce approved context rules, score compliance, generate correction prompts, and track regression across validation runs.
+              Create projects, approve rules, build context packs, and validate generated output
+              against standards your team controls.
             </p>
-            <ul class="tool-list">
-              <li><span class="tool">create_project</span></li>
-              <li><span class="tool">add_context_rule</span></li>
-              <li><span class="tool">create_context_pack</span></li>
-              <li><span class="tool">validate_output_against_context</span></li>
-              <li><span class="tool">compare_validation_runs</span></li>
-            </ul>
+          </article>
+          <article>
+            <span class="cap-icon" aria-hidden="true">F</span>
+            <h3>Generate remediation</h3>
+            <p>
+              Convert findings into correction prompts, improvement plans, challenge narratives,
+              and stakeholder-ready pitch notes.
+            </p>
           </article>
         </div>
       </section>
 
-      <section id="pipeline" class="section split">
-        <div class="section-head">
-          <p class="kicker">ARCHITECTURE</p>
-          <h2>From raw input to actionable correction</h2>
-          <p class="muted">A deterministic pipeline keeps results consistent and comparable.</p>
+      <section class="section workflow-section" id="workflow">
+        <div class="section-heading">
+          <span class="section-number">02</span>
+          <h2>An agentic review loop for UX quality.</h2>
+          <p>
+            The product direction stays focused on UX guardrails. The agent pattern is evidence
+            gathering, model-assisted report writing, and correction guidance.
+          </p>
         </div>
-        <ol class="pipeline">
+        <ol class="workflow">
           <li>
-            <p class="step">01</p>
-            <h3>Input ingestion</h3>
-            <p>Accept Figma links, webpages, screenshots, image files, or HTML snippets.</p>
+            <span>Input capture</span>
+            <p>Figma, web, image, HTML, or chat context</p>
           </li>
           <li>
-            <p class="step">02</p>
-            <h3>MCP orchestration</h3>
-            <p>Dispatch review and validation paths through a shared server pipeline.</p>
+            <span>Scoring engine</span>
+            <p>Deterministic checks plus design evidence</p>
           </li>
           <li>
-            <p class="step">03</p>
-            <h3>Scoring engine</h3>
-            <p>Apply rule findings and severity weighting to compute compliance outcomes.</p>
+            <span>Report</span>
+            <p>Scores, findings, risks, and rationale</p>
           </li>
           <li>
-            <p class="step">04</p>
-            <h3>Narrative output</h3>
-            <p>Return reports, correction prompts, and run-to-run deltas for teams.</p>
+            <span>Correction prompt</span>
+            <p>Tool-specific fixes for AI workflows</p>
+          </li>
+          <li>
+            <span>Compare runs</span>
+            <p>Track improvement and regression</p>
           </li>
         </ol>
       </section>
 
-      <section id="tools" class="section">
-        <div class="section-head">
-          <p class="kicker">MODULE MAP</p>
-          <h2>Source-level ownership by stage</h2>
-        </div>
-        <div class="module-grid">
-          <article>
-            <h3>Stage 1: Ingestion</h3>
-            <p>src/adapters/brief-adapter.ts</p>
-            <p>src/adapters/figma-adapter.ts</p>
-            <p>src/adapters/image-adapter.ts</p>
-            <p>src/input-detect.ts</p>
-          </article>
-          <article>
-            <h3>Stage 2: Orchestration</h3>
-            <p>src/pipeline.ts</p>
-            <p>src/server.ts</p>
-            <p>src/stages.ts</p>
-          </article>
-          <article>
-            <h3>Stage 3: Scoring</h3>
-            <p>src/validation-engine.ts</p>
-            <p>src/design-system-evidence.ts</p>
-            <p>scoring/src/types.ts</p>
-          </article>
-          <article>
-            <h3>Stage 4: Context</h3>
-            <p>src/storage.ts</p>
-            <p>src/contract.ts</p>
-            <p>src/context-gather.ts</p>
-          </article>
-          <article>
-            <h3>Stage 5: Output</h3>
-            <p>src/llm.ts</p>
-            <p>src/report.ts</p>
-            <p>src/detail.ts</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="section samples">
-        <div class="section-head">
-          <p class="kicker">OUTPUT EXAMPLES</p>
-          <h2>Structured artifacts ready for teams</h2>
-        </div>
-        <div class="sample-grid">
-          <article>
-            <h3>UX review report</h3>
-            <pre><code>{
-  "runId": "run_01J4Q0F8A5...",
-  "summary": "CTA hierarchy is clear; form errors need stronger contrast.",
-  "score": 78
-}</code></pre>
-          </article>
-          <article>
-            <h3>Context validation</h3>
-            <pre><code>{
-  "overallCompliance": "partial",
-  "complianceScore": 0.71,
-  "failed": 2,
-  "partial": 3
-}</code></pre>
-          </article>
-          <article>
-            <h3>Correction prompt</h3>
-            <pre><code>Fix failed UX constraints:
-1) Use design tokens only
-2) Keep one primary CTA
-3) Raise error contrast
-
-Return updated markup
-plus change-to-rule map.</code></pre>
-          </article>
-        </div>
-      </section>
-
-      <section class="section closing">
-        <article>
-          <p class="kicker">WHY THIS MATTERS</p>
-          <h2>Move from subjective feedback to repeatable quality checks.</h2>
+      <section class="showcase">
+        <div class="showcase-copy">
+          <span class="section-number">03</span>
+          <h2>Reports that product, design, and engineering can act on.</h2>
           <p>
-            ux_assistant helps teams run UX governance with measurable evidence. Instead of isolated opinions,
-            teams get shared standards, tracked compliance, and clearer remediation paths.
+            The local MCP server is the strongest path today. Remote xmcp and deeper visual
+            validators are on the startup roadmap, so teams can move from local reviews to hosted
+            quality gates.
           </p>
-        </article>
-        <article>
-          <p class="kicker">ROADMAP</p>
-          <ul class="roadmap-list">
-            <li>Figma variable and component ingestion</li>
-            <li>Visual screenshot validation</li>
-            <li>Accessibility heuristics</li>
-            <li>Design token compliance checks</li>
-            <li>UX debt and trend tracking</li>
-            <li>Workflow integrations (Slack, Jira, Figma)</li>
-          </ul>
-        </article>
+          <div class="mini-list">
+            <span>Structured report detail</span>
+            <span>Validation status by rule</span>
+            <span>Before/after run comparison</span>
+            <span>Model-assisted UX narratives</span>
+          </div>
+        </div>
+        <div class="detail-board" aria-label="Report detail preview">
+          <div class="board-column wide">
+            <div class="board-card">
+              <p class="label">Report detail</p>
+              <h3>Checkout flow review</h3>
+              <div class="bar-list">
+                <span style="--bar: 88%">Visual hierarchy</span>
+                <span style="--bar: 74%">Accessibility evidence</span>
+                <span style="--bar: 69%">Content architecture</span>
+              </div>
+            </div>
+            <div class="board-card comparison">
+              <p class="label">Run comparison</p>
+              <div>
+                <strong>+14%</strong>
+                <span>overall alignment after remediation</span>
+              </div>
+            </div>
+          </div>
+          <div class="board-column">
+            <div class="board-card">
+              <p class="label">Agent environment</p>
+              <ul class="check-list">
+                <li>Codex detected</li>
+                <li>GitHub CLI ready</li>
+                <li>pnpm workspace valid</li>
+              </ul>
+            </div>
+            <div class="board-card amber">
+              <p class="label">Next fix</p>
+              <p>Route the correction prompt into the active AI coding workflow.</p>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section id="start" class="section quickstart">
-        <div class="section-head">
-          <p class="kicker">QUICK START</p>
-          <h2>Run locally in minutes</h2>
+      <section class="section roadmap-section">
+        <div class="section-heading">
+          <span class="section-number">04</span>
+          <h2>Startup roadmap from local MCP to hosted quality platform.</h2>
+          <p>
+            First ship public credibility and reliable setup. Then add remote reviews, visual
+            validation, team workspaces, and commercial packaging.
+          </p>
         </div>
-        <pre><code>git clone git@github.com:loomandForge/ux-assistant.git
-      cd ux-assistant
-nvm install 20
+        <div class="roadmap-grid">
+          <article>
+            <span>Phase 2</span>
+            <h3>Remote MCP completion</h3>
+            <p>Replace placeholder remote tools with shared pipeline execution and storage abstraction.</p>
+          </article>
+          <article>
+            <span>Phase 3</span>
+            <h3>Stronger visual validation</h3>
+            <p>Add contrast, CTA, token, hierarchy, and accessibility checks for rendered outputs.</p>
+          </article>
+          <article>
+            <span>Phase 4</span>
+            <h3>Team workspace</h3>
+            <p>Use Vercel + Supabase for auth, organizations, projects, runs, and audit history.</p>
+          </article>
+          <article>
+            <span>Phase 5</span>
+            <h3>Commercial workflows</h3>
+            <p>Add GitHub PR, Slack, Jira, Figma, billing, and volume-based review packaging.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="setup-section" id="setup">
+        <div>
+          <span class="section-number">05</span>
+          <h2>Install the local MCP server in minutes.</h2>
+          <p>
+            The repo is pnpm-first and uses Node 20 with a real Node runtime for the native SQLite
+            dependency.
+          </p>
+        </div>
+        <pre class="setup-code"><code>git clone git@github.com:loomandForge/ux-assistant.git
+cd ux-assistant
 nvm use
-npm ci
-npm run build</code></pre>
+pnpm i --frozen-lockfile
+pnpm run build
+./setup.sh
+pnpm run doctor</code></pre>
+      </section>
+
+      <section class="trust-section">
+        <div class="faq-card">
+          <h2>Trustworthy now, ambitious by design.</h2>
+          <dl>
+            <div>
+              <dt>What works best today?</dt>
+              <dd>The local MCP review and validation workflow, including SQLite-backed runs and generated markdown reports.</dd>
+            </div>
+            <div>
+              <dt>What is still roadmap?</dt>
+              <dd>Remote xmcp execution, deeper screenshot/web validators, hosted team storage, and paid SaaS workflows.</dd>
+            </div>
+            <div>
+              <dt>Why detect Codex and GitHub CLI?</dt>
+              <dd>Environment checks make it easier to route AI-assisted UX review reports into the tools teams already use.</dd>
+            </div>
+          </dl>
+        </div>
+        <div class="security-card">
+          <p class="label">Security posture</p>
+          <h3>Built for practical open-source adoption.</h3>
+          <p>
+            The project includes CodeQL, dependency review, Dependabot, release automation, and a
+            private vulnerability reporting policy.
+          </p>
+          <a href="https://github.com/loomandForge/ux-assistant/blob/main/SECURITY.md" target="_blank" rel="noreferrer">Read security policy</a>
+        </div>
+      </section>
+
+      <section class="final-cta">
+        <h2>Bring UX review into the same loop as AI-assisted product building.</h2>
+        <p>
+          Start with the local MCP server, then extend toward hosted team reviews as the product
+          matures.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="https://github.com/loomandForge/ux-assistant" target="_blank" rel="noreferrer">View on GitHub</a>
+          <a class="button secondary" href="https://github.com/loomandForge/ux-assistant/blob/main/README.md" target="_blank" rel="noreferrer">Read the docs</a>
+        </div>
       </section>
     </main>
 
-    <footer class="wrap foot">
-      <p>Built for practical UX workflows with MCP-native automation.</p>
+    <footer class="site-footer">
+      <a href="#top">ux_assistant</a>
+      <div>
+        <a href="https://github.com/loomandForge/ux-assistant" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="https://github.com/loomandForge/ux-assistant/blob/main/README.md" target="_blank" rel="noreferrer">Documentation</a>
+        <a href="https://github.com/loomandForge/ux-assistant/blob/main/SECURITY.md" target="_blank" rel="noreferrer">Security</a>
+      </div>
     </footer>
   </body>
 </html>

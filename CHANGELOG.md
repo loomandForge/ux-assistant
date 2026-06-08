@@ -10,12 +10,14 @@ The format is based on Keep a Changelog and this project aims to follow Semantic
 
 - Public repository hardening baseline (.github workflows, templates, security and contribution policy).
 - GitHub Pages capability site under `docs/`.
+- Premium startup-style GitHub Pages site with product preview, setup flow, trust notes, and startup roadmap.
 - Release automation with Release Drafter and tag-based GitHub Releases.
 - Dedicated ingestion adapters under `src/adapters/` for brief, Figma, and visual input paths.
 - Lightweight knowledge retrieval ranking (priority, tag match, scope weighting).
 - Database schema migration/versioning notes for analysis-context tables in `README.md`.
 - Documentation site architecture section for adapter boundaries and ranked knowledge retrieval flow.
 - Documentation site module mapping section linking pipeline stages to concrete source files.
+- `pnpm run doctor` setup readiness check for Node, pnpm, Git origin, GitHub CLI, Codex, model-provider credentials, and optional Figma MCP configuration.
 
 ### Changed
 
@@ -25,6 +27,11 @@ The format is based on Keep a Changelog and this project aims to follow Semantic
 - Repository packaging now uses the `xmcp` deployment path with a dedicated `build:xmcp` script and Vercel build command.
 - CI and lockfile handling are aligned around `pnpm`, including workspace metadata for the local `scoring` package.
 - `better-sqlite3` native builds are now explicitly allowed under pnpm-based installs to keep local and CI test environments working.
+- README, GitLab CI, and package scripts now use pnpm-first setup and verification commands.
+
+### Removed
+
+- Stale `package-lock.json` and the broken `start:http` script that referenced missing `dist/http.js`.
 
 ## [0.1.0] - 2026-05-29
 

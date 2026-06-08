@@ -5,9 +5,9 @@ Thanks for contributing to ux_assistant.
 ## Development Setup
 
 1. Install Node.js 20 (`nvm install 20 && nvm use`)
-2. Install dependencies: `npm ci`
-3. Build: `npm run build`
-4. Test: `npm test`
+2. Install dependencies: `pnpm i --frozen-lockfile`
+3. Build: `pnpm run build`
+4. Test: `pnpm test`
 
 ## Pull Requests
 
