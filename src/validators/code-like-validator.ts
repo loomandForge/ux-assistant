@@ -38,22 +38,6 @@ const getAttr = (attrs: string, name: string): string | null => {
   return null;
 };
 
-const extractElements = (source: string): SourceElement[] => {
-  const elements: SourceElement[] = [];
-  const paired = /<([A-Za-z][\w.]*)\b([^>]*)>([\s\S]*?)<\/\1>/g;
-  const selfClosing = /<([A-Za-z][\w.]*)\b([^>]*)\/>/g;
-
-  for (const match of source.matchAll(paired)) {
-    elements.push({ tag: match[1] ?? '', attrs: match[2] ?? '', body: match[3] ?? '' });
-  }
-
-  for (const match of source.matchAll(selfClosing)) {
-    elements.push({ tag: match[1] ?? '', attrs: match[2] ?? '', body: '' });
-  }
-
-  return elements;
-};
-
 const extractActionElements = (source: string): SourceElement[] => {
   const elements: SourceElement[] = [];
   const actionTag = '(?:button|a|Button|Link|[A-Za-z][\\w.]*(?:Button|Link|CTA))';
