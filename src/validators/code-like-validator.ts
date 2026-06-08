@@ -374,7 +374,7 @@ export const evaluateCodeLikeRule = (
     return evaluateColorRule(rule, outputContent, severity);
   }
 
-  if (text.includes('form') || text.includes('error state') || text.includes('error-state')) {
+  if (/\bform\b/.test(text) || text.includes('error state') || text.includes('error-state')) {
     return evaluateFormErrorRule(rule, outputContent, severity);
   }
 

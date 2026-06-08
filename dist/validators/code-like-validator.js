@@ -24,18 +24,6 @@ const getAttr = (attrs, name) => {
         return braced[1];
     return null;
 };
-const extractElements = (source) => {
-    const elements = [];
-    const paired = /<([A-Za-z][\w.]*)\b([^>]*)>([\s\S]*?)<\/\1>/g;
-    const selfClosing = /<([A-Za-z][\w.]*)\b([^>]*)\/>/g;
-    for (const match of source.matchAll(paired)) {
-        elements.push({ tag: match[1] ?? '', attrs: match[2] ?? '', body: match[3] ?? '' });
-    }
-    for (const match of source.matchAll(selfClosing)) {
-        elements.push({ tag: match[1] ?? '', attrs: match[2] ?? '', body: '' });
-    }
-    return elements;
-};
 const extractActionElements = (source) => {
     const elements = [];
     const actionTag = '(?:button|a|Button|Link|[A-Za-z][\\w.]*(?:Button|Link|CTA))';
@@ -81,9 +69,11 @@ const elementLabel = (element) => {
 const extractPrimaryCtas = (source) => {
     const labels = extractActionElements(source)
         .filter(element => isActionElement(element) && hasPrimaryMarker(element))
-        .map(elementLabel);
+        .map(elementLabel)
+        .map(label => label.trim())
+        .filter(label => label.length > 0);
     if (labels.length > 0)
-        return unique(labels);
+        return labels;
     const fallbackMarkers = source.match(/btn-primary|button-primary|cta-primary|primary cta|variant\s*=\s*["']primary["']/gi) ??
         [];
     return fallbackMarkers.map(marker => marker.replace(/\s+/g, ' ').trim());
@@ -288,7 +278,7 @@ export const evaluateCodeLikeRule = (rule, outputType, outputContent) => {
     if (text.includes('token') || text.includes('design system') || text.includes('color')) {
         return evaluateColorRule(rule, outputContent, severity);
     }
-    if (text.includes('form') || text.includes('error state') || text.includes('error-state')) {
+    if (/\bform\b/.test(text) || text.includes('error state') || text.includes('error-state')) {
         return evaluateFormErrorRule(rule, outputContent, severity);
     }
     if (text.includes('heading') ||
