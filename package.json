@@ -20,19 +20,19 @@
     ]
   },
   "scripts": {
-    "build": "npm run build:core",
-    "build:core": "npm run build --workspace=scoring && tsc",
-    "build:xmcp": "npm run build && xmcp build --vercel && node ./scripts/fix-vercel-function-package.cjs",
+    "build": "pnpm run build:core",
+    "build:core": "pnpm --filter @ux-assistant/scoring build && tsc",
+    "build:xmcp": "pnpm run build && xmcp build --vercel && node ./scripts/fix-vercel-function-package.cjs",
     "dev": "xmcp dev",
+    "doctor": "node ./scripts/doctor.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test dist/contract.test.js dist/storage.test.js dist/validation-engine.test.js dist/report.test.js dist/server-tools.test.js dist/validators/validators.test.js",
+    "test": "pnpm run build && node --test dist/contract.test.js dist/storage.test.js dist/validation-engine.test.js dist/report.test.js dist/server-tools.test.js dist/validators/validators.test.js",
     "start": "node dist/cli.js",
-    "start:http": "node dist/http.js",
     "auto-update:enable": "sh ./scripts/enable-auto-update.sh",
     "auto-update:pull": "sh ./scripts/auto-update.sh main",
-    "verify:contract": "npm run build && node dist/contract-check.js",
-    "verify:scenarios": "npm run build && node dist/scenario-check.js",
-    "verify:phase8": "npm run verify:contract && npm run verify:scenarios"
+    "verify:contract": "pnpm run build && node dist/contract-check.js",
+    "verify:scenarios": "pnpm run build && node dist/scenario-check.js",
+    "verify:phase8": "pnpm run verify:contract && pnpm run verify:scenarios"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",

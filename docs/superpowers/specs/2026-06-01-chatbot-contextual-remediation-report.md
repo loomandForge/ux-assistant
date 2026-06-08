@@ -164,7 +164,7 @@ Actions:
 
 ### P2.2 Outcome-Led Roadmap
 Actions:
-1. Phase 1: UX debt and accessibility stabilization.
+1. Initial stage: UX debt and accessibility stabilization.
 2. Phase 2: workflow coherence and conversation quality.
 3. Phase 3: differentiated product capabilities aligned with measured outcomes.
 
