@@ -67,7 +67,7 @@ export const buildCorrectionPrompt = ({ targetTool, overallCompliance, findings,
     })
         .slice(0, maxItems);
     const source = actionable.length > 0 ? actionable : findings.slice(0, maxItems);
-    const instructions = source.map((item, index) => `${index + 1}. ${item.recommendation} (rule=${item.ruleId}, evidence=${item.evidence})`);
+    const instructions = source.map((item, index) => `${index + 1}. ${item.recommendation} Fix: ${item.correctionPrompt} (rule=${item.ruleId}, evidence=${item.evidence})`);
     return [
         toolIntro(targetTool),
         `Current compliance score: ${overallCompliance ?? 'unknown'}.`,

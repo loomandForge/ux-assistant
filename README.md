@@ -218,8 +218,15 @@ Current limitations:
 
 Implemented now:
 
-- CTA competition detection in HTML/React-like source
-- Hardcoded color literal detection (`#hex`) for token/design-system style rules
+- CTA hierarchy detection in HTML/React-like source, including evidence for competing primary actions
+- Hardcoded color literal detection (`#hex`, `rgb(a)`, and `hsl(a)`) for token/design-system style rules
+- Heading hierarchy checks for missing headings, multiple/missing `h1`, and skipped heading levels
+- Semantic landmark checks for basic page structure evidence (`main`, navigation, and headings)
+- Form error-state checks for labels plus `aria-invalid`, `aria-describedby`, alert, error, or invalid hooks
+
+These checks are deterministic and best suited for HTML/React-like outputs where the source can be
+inspected directly. Findings include concrete evidence, recommendation text, and correction prompts
+that can be passed back into Codex, Cursor, Figma Make, or similar AI-assisted build tools.
 
 Currently returns guided `unknown` (planned deeper implementation):
 
@@ -232,14 +239,25 @@ Currently returns guided `unknown` (planned deeper implementation):
 - Visual screenshot validation with deterministic UI evidence extraction
 - Accessibility heuristics (contrast, focus order, semantic structure)
 - Design-token compliance checks across generated and hand-authored UI
+- Remote xmcp execution wired to the same review pipeline as the local MCP server
+- Codex, GitHub CLI, model-provider, and Figma MCP readiness checks for AI-assisted report workflows
+- Hosted team workspace on Vercel + Supabase for auth, projects, rules, runs, and audit history
 - UX debt tracking and trend analysis per feature area
 - Team dashboards for validation quality and regression signals
 - Slack, Jira, and Figma integrations for workflow-level automation
 - Portfolio-level UX governance metrics across products and squads
 
+## Current Product Boundary
+
+The local stdio MCP server is the strongest path today. It runs review and validation workflows,
+stores local SQLite-backed runs, and can generate markdown reports. Remote xmcp deployment is
+available for discovery/build validation, but the full remote execution path is still being
+completed. Hosted team workspaces, billing, and deeper visual validation are roadmap items.
+
 ## Requirements
 
 - Node.js v20 (via [nvm](https://github.com/nvm-sh/nvm))
+- pnpm v10.34.1
 - Uses `better-sqlite3` native addon, so real Node.js is required (Bun is not supported)
 
 ## Team Setup (One-Time)
@@ -251,9 +269,10 @@ git clone <your-repository-url> ux-assistant
 cd ux-assistant
 nvm install 20
 nvm use
-npm install
-npm run build
+pnpm i --frozen-lockfile
+pnpm run build
 ./setup.sh
+pnpm run doctor
 ```
 
 Then restart your MCP client app (fully quit, reopen, start a new chat).
@@ -263,8 +282,8 @@ Then restart your MCP client app (fully quit, reopen, start a new chat).
 ```bash
 cd ux-assistant
 git pull origin main
-npm install
-npm run build
+pnpm i --frozen-lockfile
+pnpm run build
 ```
 
 If you used `setup.sh`, auto-update hooks are already enabled in this clone.
@@ -285,8 +304,8 @@ nvm use
 ```bash
 git clone <your-repository-url> ux-assistant
 cd ux-assistant
-npm install
-npm run build
+pnpm i --frozen-lockfile
+pnpm run build
 ```
 
 3. Add MCP config for your MCP client (OpenCode or similar)
@@ -364,6 +383,24 @@ Some MCP clients can inject a Bun-based `node` shim into PATH. Since `better-sql
 6. Generate remediation via `generate_correction_prompt`
 7. Re-run and compare with `compare_validation_runs`
 
+### Agent-Assisted Report Readiness
+
+Run the setup doctor when you want to confirm the local environment can support AI-assisted
+UX review reporting:
+
+```bash
+pnpm run doctor
+```
+
+The doctor checks:
+
+- Node.js major version and pnpm availability
+- Git origin configuration
+- GitHub CLI installation and authentication
+- Codex environment or CLI presence
+- GHCP/GitHub/GLM model token or GitHub Copilot credential presence
+- Optional Figma MCP URL configuration
+
 ## Verification
 
 ```bash
@@ -374,7 +411,7 @@ opencode mcp list | grep ux-review
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1"}}}' | ./bin/ux-review-mcp
 
 # Full local tests
-npm run test
+pnpm test
 ```
 
 ## Troubleshooting
@@ -382,8 +419,8 @@ npm run test
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Cannot find module better_sqlite3.node` | Bun shim was used | Run via `bin/ux-review-mcp` |
-| NODE_MODULE_VERSION mismatch | Node version differs from install version | `nvm use && npm rebuild better-sqlite3` |
-| `Could not locate the bindings file` after pnpm install | pnpm blocked native build scripts | `npx pnpm install --frozen-lockfile && npx pnpm rebuild better-sqlite3` |
+| NODE_MODULE_VERSION mismatch | Node version differs from install version | `nvm use && pnpm rebuild better-sqlite3` |
+| `Could not locate the bindings file` after pnpm dependency setup | pnpm blocked native build scripts | `pnpm i --frozen-lockfile && pnpm rebuild better-sqlite3` |
 | Tools not visible | stale client session | restart client and open new chat |
 | `ux-review` disconnected | Node 20 not found | `nvm install 20 && nvm use` |
 
@@ -415,13 +452,13 @@ This repo includes:
 Enable in clone:
 
 ```bash
-npm run auto-update:enable
+pnpm run auto-update:enable
 ```
 
 Run once manually:
 
 ```bash
-npm run auto-update:pull
+pnpm run auto-update:pull
 ```
 
 Safety behavior:
