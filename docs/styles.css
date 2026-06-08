@@ -29,6 +29,7 @@ html {
 body {
   margin: 0;
   min-height: 100%;
+  overflow-x: hidden;
   background:
     linear-gradient(rgba(15, 122, 95, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(15, 122, 95, 0.045) 1px, transparent 1px),
@@ -75,7 +76,7 @@ main,
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 760;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .brand-mark {
@@ -116,6 +117,13 @@ main,
   padding: 24px 0 58px;
 }
 
+.hero > *,
+.showcase > *,
+.setup-section > *,
+.trust-section > * {
+  min-width: 0;
+}
+
 .hero-copy h1,
 .section-heading h2,
 .showcase-copy h2,
@@ -124,13 +132,17 @@ main,
 .final-cta h2 {
   margin: 0;
   line-height: 0.98;
-  letter-spacing: -0.06em;
+  letter-spacing: 0;
   text-wrap: balance;
 }
 
 .hero-copy h1 {
   max-width: 10.5ch;
-  font-size: clamp(3.3rem, 8.4vw, 7.2rem);
+  font-size: clamp(3.2rem, 7.2vw, 6.35rem);
+}
+
+.hero-copy h1 span {
+  display: block;
 }
 
 .hero-copy p,
@@ -202,6 +214,7 @@ main,
 }
 
 .report-shell {
+  max-width: 100%;
   overflow: hidden;
 }
 
@@ -249,6 +262,13 @@ code {
     #f8faf9;
 }
 
+.report-grid > *,
+.detail-board > *,
+.board-column > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .score-panel,
 .findings-panel,
 .rules-panel,
@@ -291,7 +311,7 @@ code {
 .score-ring span {
   font-size: 2.35rem;
   font-weight: 820;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
 }
 
 .score-note {
@@ -304,6 +324,7 @@ code {
 .panel-head {
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
 }
 
 .status-tag,
@@ -336,6 +357,14 @@ code {
   align-items: start;
   color: #2d3635;
   font-size: 0.88rem;
+  min-width: 0;
+}
+
+.finding-list li span:last-child,
+.rule-row span,
+.score-note,
+.window-title {
+  overflow-wrap: anywhere;
 }
 
 .severity.high {
@@ -486,7 +515,7 @@ code {
 .security-card h3 {
   margin: 18px 0 0;
   font-size: 1.12rem;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .capability-grid p,
@@ -538,7 +567,7 @@ code {
 .workflow span {
   display: block;
   font-weight: 760;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .workflow p {
@@ -632,7 +661,7 @@ code {
   color: var(--emerald-dark);
   font-size: 3.2rem;
   line-height: 1;
-  letter-spacing: -0.08em;
+  letter-spacing: 0;
 }
 
 .comparison span {
@@ -696,7 +725,7 @@ code {
 
 .faq-card dt {
   font-weight: 760;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .security-card h3 {
@@ -780,7 +809,8 @@ code {
   .site-header,
   main,
   .site-footer {
-    width: min(100% - 24px, 1160px);
+    width: calc(100% - 24px);
+    max-width: 1160px;
   }
 
   .site-header,
@@ -793,8 +823,75 @@ code {
     gap: 12px;
   }
 
+  .hero {
+    gap: 32px;
+  }
+
   .hero-copy h1 {
-    font-size: clamp(3rem, 16vw, 4.45rem);
+    max-width: 100%;
+    font-size: clamp(2rem, 8.8vw, 2.45rem);
+    line-height: 1.03;
+    text-wrap: pretty;
+  }
+
+  .hero-copy p {
+    max-width: 34ch;
+    font-size: 1rem;
+    overflow-wrap: break-word;
+    text-wrap: pretty;
+  }
+
+  .report-shell,
+  .report-grid,
+  .score-panel,
+  .findings-panel,
+  .rules-panel,
+  .prompt-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .report-grid {
+    padding: 12px;
+  }
+
+  .score-panel,
+  .findings-panel,
+  .rules-panel,
+  .prompt-panel {
+    padding: 15px;
+  }
+
+  .panel-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .status-tag {
+    white-space: normal;
+  }
+
+  .finding-list li {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .score-note {
+    max-width: 24ch;
+    margin-inline: auto;
+  }
+
+  .finding-list .severity {
+    justify-self: start;
+  }
+
+  .finding-list li span:last-child {
+    max-width: 32ch;
+  }
+
+  .rule-row {
+    align-items: flex-start;
   }
 
   .report-grid,
