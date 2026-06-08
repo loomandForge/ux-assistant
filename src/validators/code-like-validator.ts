@@ -96,10 +96,11 @@ const elementLabel = (element: SourceElement): string => {
 const extractPrimaryCtas = (source: string): string[] => {
   const labels = extractActionElements(source)
     .filter(element => isActionElement(element) && hasPrimaryMarker(element))
-    .map(elementLabel);
+    .map(elementLabel)
+    .map(label => label.trim())
+    .filter(label => label.length > 0);
 
-  if (labels.length > 0) return unique(labels);
-
+  if (labels.length > 0) return labels;
   const fallbackMarkers =
     source.match(/btn-primary|button-primary|cta-primary|primary cta|variant\s*=\s*["']primary["']/gi) ??
     [];
