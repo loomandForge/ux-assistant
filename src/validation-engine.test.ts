@@ -59,6 +59,7 @@ test('buildCorrectionPrompt adapts for cursor target', () => {
 
   assert.match(prompt, /Update the implementation in Cursor/i);
   assert.match(prompt, /Keep one primary CTA/i);
+  assert.match(prompt, /Reduce CTA competition/i);
 });
 
 test('buildCorrectionPrompt adapts for figma_make target', () => {

@@ -18,9 +18,12 @@ The format is based on Keep a Changelog and this project aims to follow Semantic
 - Documentation site architecture section for adapter boundaries and ranked knowledge retrieval flow.
 - Documentation site module mapping section linking pipeline stages to concrete source files.
 - `pnpm run doctor` setup readiness check for Node, pnpm, Git origin, GitHub CLI, Codex, model-provider credentials, and optional Figma MCP configuration.
+- Fixture-backed deterministic validation coverage for checkout-style UX review examples.
 
 ### Changed
 
+- HTML/React validation findings now include stronger deterministic evidence for CTA hierarchy, hardcoded colors, heading structure, semantic landmarks, and form error-state hooks.
+- Correction prompts now include both the recommendation and the concrete fix instruction for each prioritized finding.
 - README now includes build/security/pages badges and quick policy links.
 - `reviewInput` ingestion flow now delegates to dedicated adapters instead of centralized branch logic.
 - Knowledge context retrieval now returns ranked items for run-level context hydration.

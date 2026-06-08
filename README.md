@@ -218,8 +218,15 @@ Current limitations:
 
 Implemented now:
 
-- CTA competition detection in HTML/React-like source
-- Hardcoded color literal detection (`#hex`) for token/design-system style rules
+- CTA hierarchy detection in HTML/React-like source, including evidence for competing primary actions
+- Hardcoded color literal detection (`#hex`, `rgb(a)`, and `hsl(a)`) for token/design-system style rules
+- Heading hierarchy checks for missing headings, multiple/missing `h1`, and skipped heading levels
+- Semantic landmark checks for basic page structure evidence (`main`, navigation, and headings)
+- Form error-state checks for labels plus `aria-invalid`, `aria-describedby`, alert, error, or invalid hooks
+
+These checks are deterministic and best suited for HTML/React-like outputs where the source can be
+inspected directly. Findings include concrete evidence, recommendation text, and correction prompts
+that can be passed back into Codex, Cursor, Figma Make, or similar AI-assisted build tools.
 
 Currently returns guided `unknown` (planned deeper implementation):
 
