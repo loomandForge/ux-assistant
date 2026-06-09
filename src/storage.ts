@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { homedir, tmpdir } from 'node:os';
 import { mkdirSync } from 'node:fs';
 
 export type ContextRulePriority = 'critical' | 'high' | 'medium' | 'low';
@@ -106,7 +106,9 @@ export type ValidationRunSummary = {
   completedAt: string | null;
 };
 
-const DB_DIR = process.env.UX_REVIEW_DATA_DIR ?? join(homedir(), '.ux-review');
+const DB_DIR =
+  process.env.UX_REVIEW_DATA_DIR ??
+  (process.env.VERCEL ? join(tmpdir(), 'ux-review') : join(homedir(), '.ux-review'));
 const DB_PATH = join(DB_DIR, 'reviews.db');
 
 const SCHEMA = `
@@ -325,7 +327,7 @@ export class ReviewStorage {
 
   constructor(dbPath?: string) {
     const path = dbPath ?? DB_PATH;
-    mkdirSync(DB_DIR, { recursive: true });
+    mkdirSync(dirname(path), { recursive: true });
     this.db = new Database(path);
     this.db.pragma('journal_mode = WAL');
     this.db.exec(SCHEMA);

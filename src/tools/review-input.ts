@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { type InferSchema, type ToolMetadata } from 'xmcp';
+import { runRemoteInputReview } from './remote-review.js';
 
 export const schema = {
   figmaUrl: z.string().optional().describe('Figma URL to review'),
@@ -20,7 +21,7 @@ export const schema = {
 export const metadata: ToolMetadata = {
   name: 'review_input',
   description:
-    'Phase 1 remote tool registration for review input. Accepts review fields and returns migration guidance.',
+    'Run the UX review pipeline for Figma, webpage, image, HTML, or chat-detected input.',
   annotations: {
     title: 'Review Input',
     readOnlyHint: true,
@@ -30,15 +31,5 @@ export const metadata: ToolMetadata = {
 };
 
 export default async function reviewInputTool(args: InferSchema<typeof schema>) {
-  return [
-    '# review_input (Phase 1)',
-    '',
-    'This tool is now registered for remote discovery.',
-    'The full scoring pipeline migration is being completed separately for serverless compatibility.',
-    '',
-    'Received input:',
-    '```json',
-    JSON.stringify(args, null, 2),
-    '```'
-  ].join('\n');
+  return runRemoteInputReview(args);
 }
