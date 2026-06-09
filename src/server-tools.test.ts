@@ -4,6 +4,14 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const serverSource = readFileSync(join(process.cwd(), 'src', 'server.ts'), 'utf8');
+const remoteFigmaToolSource = readFileSync(
+  join(process.cwd(), 'src', 'tools', 'review-figma.ts'),
+  'utf8'
+);
+const remoteInputToolSource = readFileSync(
+  join(process.cwd(), 'src', 'tools', 'review-input.ts'),
+  'utf8'
+);
 
 test('server registers challenge_from_input tool', () => {
   assert.match(serverSource, /name:\s*'challenge_from_input'/);
@@ -28,4 +36,11 @@ test('server registers improve_from_input tool', () => {
   assert.match(serverSource, /name:\s*'improve_from_input'/);
   assert.match(serverSource, /Run review_input and improve_design in one call/);
   assert.match(serverSource, /case 'improve_from_input'/);
+});
+
+test('remote review tools call the pipeline instead of Phase 1 placeholders', () => {
+  assert.match(remoteFigmaToolSource, /runRemoteFigmaReview/);
+  assert.match(remoteInputToolSource, /runRemoteInputReview/);
+  assert.doesNotMatch(remoteFigmaToolSource, /Phase 1|registered and available remotely|being migrated/);
+  assert.doesNotMatch(remoteInputToolSource, /Phase 1|registered for remote discovery|being completed separately/);
 });

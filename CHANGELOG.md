@@ -31,6 +31,7 @@ The format is based on Keep a Changelog and this project aims to follow Semantic
 - CI and lockfile handling are aligned around `pnpm`, including workspace metadata for the local `scoring` package.
 - `better-sqlite3` native builds are now explicitly allowed under pnpm-based installs to keep local and CI test environments working.
 - README, GitLab CI, and package scripts now use pnpm-first setup and verification commands.
+- Remote `review_figma` and `review_input` xmcp tools now run the UX review pipeline instead of returning Phase 1 migration placeholders.
 
 ### Removed
 
