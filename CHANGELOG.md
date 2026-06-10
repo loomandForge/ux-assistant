@@ -32,6 +32,10 @@ The format is based on Keep a Changelog and this project aims to follow Semantic
 - `better-sqlite3` native builds are now explicitly allowed under pnpm-based installs to keep local and CI test environments working.
 - README, GitLab CI, and package scripts now use pnpm-first setup and verification commands.
 - Remote `review_figma` and `review_input` xmcp tools now run the UX review pipeline instead of returning Phase 1 migration placeholders.
+- Remote xmcp review runs now use serverless-safe in-memory storage instead of loading local SQLite at Vercel startup.
+- Remote screenshot capture defaults to Vercel's writable temp directory instead of a home-directory path.
+- Web and HTML input reviews now continue with metadata/design-context evidence when screenshot capture is unavailable in serverless environments.
+- Vercel xmcp builds now copy the local `@ux-assistant/scoring` workspace package into the serverless function bundle and normalize the generated runtime require path.
 
 ### Removed
 

@@ -1,9 +1,13 @@
-import { createRequire } from 'node:module';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import type { ScoringBundle, DeterministicReviewResult } from '@ux-assistant/scoring';
-import { ReviewStorage } from './storage.js';
+import {
+  loadGuidelineParameters,
+  runDeterministicScoring,
+  type ScoringBundle,
+  type DeterministicReviewResult
+} from '@ux-assistant/scoring';
+import type { ReviewStorage } from './storage.js';
 import { buildMarkdownReport } from './report.js';
 import { generateNarrative, LlmProviderMetadata } from './llm.js';
 import { resolveReviewInput, ReviewInputRequest, ReviewInputType } from './input-detect.js';
@@ -20,10 +24,6 @@ import { extractDesignData, ExtractedDesignData } from './design-data-extract.js
 import { ingestBriefContext } from './adapters/brief-adapter.js';
 import { ingestFigmaInput } from './adapters/figma-adapter.js';
 import { ingestHtmlInput, ingestImagePathInput, ingestWebInput } from './adapters/image-adapter.js';
-
-const require = createRequire(import.meta.url);
-const { runDeterministicScoring, loadGuidelineParameters } =
-  require('@ux-assistant/scoring') as typeof import('@ux-assistant/scoring');
 
 export interface ReviewResult {
   runId: number;
