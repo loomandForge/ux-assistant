@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { type InferSchema, type ToolMetadata } from 'xmcp';
+import { runRemotePerspective } from './remote-review.js';
 
 export const schema = {
   runId: z.number().int().positive().describe('Review run ID from review_figma or review_input'),
@@ -18,13 +19,9 @@ export const metadata: ToolMetadata = {
 };
 
 export default async function challengeDesignTool({ runId, prdText }: InferSchema<typeof schema>) {
-  return [
-    '# challenge_design (Phase 1)',
-    '',
-    `runId: ${runId}`,
-    prdText ? `prdText provided: yes` : 'prdText provided: no',
-    '',
-    'Tool is registered and ready for remote invocation.',
-    'Perspective generation will be wired in the serverless-safe phase 2 migration.'
-  ].join('\n');
+  return runRemotePerspective({
+    runId,
+    mode: 'challenge',
+    prdText
+  });
 }

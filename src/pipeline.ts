@@ -10,7 +10,12 @@ import {
 import type { ReviewStorage } from './storage.js';
 import { buildMarkdownReport } from './report.js';
 import { generateNarrative, LlmProviderMetadata } from './llm.js';
-import { resolveReviewInput, ReviewInputRequest, ReviewInputType } from './input-detect.js';
+import {
+  resolveReviewInput,
+  ReviewInputRequest,
+  ReviewInputType,
+  type FigmaEvidenceInput
+} from './input-detect.js';
 import {
   buildReviewDetailPayload,
   ReviewDetailPayload,
@@ -22,7 +27,11 @@ import { parseDesignSystemMode, type DesignSystemConfig } from './design-system.
 import { buildDesignSystemEvidence, type DesignSystemEvidence } from './design-system-evidence.js';
 import { extractDesignData, ExtractedDesignData } from './design-data-extract.js';
 import { ingestBriefContext } from './adapters/brief-adapter.js';
-import { ingestFigmaInput } from './adapters/figma-adapter.js';
+import {
+  hasFigmaEvidence,
+  ingestFigmaEvidenceInput,
+  ingestFigmaInput
+} from './adapters/figma-adapter.js';
 import { ingestHtmlInput, ingestImagePathInput, ingestWebInput } from './adapters/image-adapter.js';
 
 export interface ReviewResult {
@@ -331,6 +340,26 @@ export async function reviewInput(
     }
 
     if (resolved.type === 'figma_url') {
+      if (hasFigmaEvidence(request.figmaEvidence)) {
+        const figmaPayload = ingestFigmaEvidenceInput({
+          figmaUrl: resolved.value,
+          figmaEvidence: request.figmaEvidence!,
+          runId,
+          storage,
+          strategicContext
+        });
+        return await runScoringAndPersist(
+          'figma_url',
+          figmaPayload.source,
+          figmaPayload.bundle,
+          runId,
+          storage,
+          designSystemConfig,
+          debug,
+          onProgress
+        );
+      }
+
       const figmaPayload = await ingestFigmaInput({
         figmaUrl: resolved.value,
         runId,
@@ -419,6 +448,7 @@ export async function reviewFigma(
   designSystemConfig?: {
     designSystem?: string;
     customGuidelinePath?: string;
+    figmaEvidence?: FigmaEvidenceInput;
     problemStatement?: string;
     proposedSolution?: string;
     requirements?: string[];
@@ -431,6 +461,7 @@ export async function reviewFigma(
       figmaUrl,
       designSystem: designSystemConfig?.designSystem,
       customGuidelinePath: designSystemConfig?.customGuidelinePath,
+      figmaEvidence: designSystemConfig?.figmaEvidence,
       problemStatement: designSystemConfig?.problemStatement,
       proposedSolution: designSystemConfig?.proposedSolution,
       requirements: designSystemConfig?.requirements

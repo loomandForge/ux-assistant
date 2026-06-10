@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { type InferSchema, type ToolMetadata } from 'xmcp';
+import { runRemotePerspective } from './remote-review.js';
 
 export const schema = {
   runId: z.number().int().positive().describe('Review run ID from review_figma or review_input'),
@@ -19,14 +20,10 @@ export const metadata: ToolMetadata = {
 };
 
 export default async function improveDesignTool({ runId, problemStatement, requirements }: InferSchema<typeof schema>) {
-  return [
-    '# improve_design (Phase 1)',
-    '',
-    `runId: ${runId}`,
-    problemStatement ? 'problemStatement provided: yes' : 'problemStatement provided: no',
-    requirements?.length ? `requirements: ${requirements.length}` : 'requirements: 0',
-    '',
-    'Tool is registered and available remotely.',
-    'Full improvement synthesis is queued for serverless-safe phase 2 migration.'
-  ].join('\n');
+  return runRemotePerspective({
+    runId,
+    mode: 'improve',
+    problemStatement,
+    requirements
+  });
 }

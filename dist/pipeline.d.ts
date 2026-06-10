@@ -1,8 +1,8 @@
 import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import type { DeterministicReviewResult } from '@ux-assistant/scoring';
-import { ReviewStorage } from './storage.js';
+import { type DeterministicReviewResult } from '@ux-assistant/scoring';
+import type { ReviewStorage } from './storage.js';
 import { LlmProviderMetadata } from './llm.js';
-import { ReviewInputRequest, ReviewInputType } from './input-detect.js';
+import { ReviewInputRequest, ReviewInputType, type FigmaEvidenceInput } from './input-detect.js';
 import { ReviewDetailPayload } from './detail.js';
 import { ReviewStage } from './stages.js';
 export interface ReviewResult {
@@ -35,6 +35,7 @@ export declare function reviewInput(request: ReviewInputRequest, storage: Review
 export declare function reviewFigma(figmaUrl: string, storage: ReviewStorage, debug?: boolean, designSystemConfig?: {
     designSystem?: string;
     customGuidelinePath?: string;
+    figmaEvidence?: FigmaEvidenceInput;
     problemStatement?: string;
     proposedSolution?: string;
     requirements?: string[];
