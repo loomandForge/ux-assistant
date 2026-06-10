@@ -19,6 +19,7 @@ The format is based on Keep a Changelog and this project aims to follow Semantic
 - Documentation site module mapping section linking pipeline stages to concrete source files.
 - `pnpm run doctor` setup readiness check for Node, pnpm, Git origin, GitHub CLI, Codex, model-provider credentials, and optional Figma MCP configuration.
 - Fixture-backed deterministic validation coverage for checkout-style UX review examples.
+- Optional `figmaEvidence` handoff for host agents that fetch Figma MCP context before calling the UX Assistant review tools.
 
 ### Changed
 
@@ -32,6 +33,7 @@ The format is based on Keep a Changelog and this project aims to follow Semantic
 - `better-sqlite3` native builds are now explicitly allowed under pnpm-based installs to keep local and CI test environments working.
 - README, GitLab CI, and package scripts now use pnpm-first setup and verification commands.
 - Remote `review_figma` and `review_input` xmcp tools now run the UX review pipeline instead of returning Phase 1 migration placeholders.
+- Remote `challenge_design`, `improve_design`, and `pitch_design` xmcp tools now synthesize from existing review runs instead of returning Phase 1 placeholders.
 - Remote xmcp review runs now use serverless-safe in-memory storage instead of loading local SQLite at Vercel startup.
 - Remote screenshot capture defaults to Vercel's writable temp directory instead of a home-directory path.
 - Web and HTML input reviews now continue with metadata/design-context evidence when screenshot capture is unavailable in serverless environments.

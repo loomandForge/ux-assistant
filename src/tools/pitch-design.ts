@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { type InferSchema, type ToolMetadata } from 'xmcp';
+import { runRemotePerspective } from './remote-review.js';
 
 export const schema = {
   runId: z.number().int().positive().describe('Review run ID from review_figma or review_input'),
@@ -31,18 +32,14 @@ export default async function pitchDesignTool({
   alternativesConsidered,
   userResearch
 }: InferSchema<typeof schema>) {
-  return [
-    '# pitch_design (Phase 1)',
-    '',
-    `runId: ${runId}`,
-    `audience: ${audience ?? 'n/a'}`,
-    `businessGoal: ${businessGoal ?? 'n/a'}`,
-    `designDecisions: ${designDecisions?.length ?? 0}`,
-    `constraints: ${constraints?.length ?? 0}`,
-    `alternativesConsidered: ${alternativesConsidered?.length ?? 0}`,
-    `userResearch provided: ${userResearch ? 'yes' : 'no'}`,
-    '',
-    'Tool is registered and available remotely.',
-    'Stakeholder pitch generation will be wired in serverless-safe phase 2 migration.'
-  ].join('\n');
+  return runRemotePerspective({
+    runId,
+    mode: 'pitch',
+    audience,
+    businessGoal,
+    designDecisions,
+    constraints,
+    alternativesConsidered,
+    userResearch
+  });
 }

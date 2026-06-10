@@ -8,6 +8,28 @@ export const schema = {
   imagePath: z.string().optional().describe('Absolute path to an image file to review'),
   htmlSnippet: z.string().optional().describe('HTML markup to render and review'),
   chatContext: z.string().optional().describe('Recent chat text used for auto-detect'),
+  figmaEvidence: z
+    .object({
+      designContext: z.unknown().optional(),
+      metadata: z.unknown().optional(),
+      screenshot: z.unknown().optional(),
+      variables: z.unknown().optional(),
+      variableDefs: z.unknown().optional(),
+      toolCalls: z
+        .array(
+          z.object({
+            toolName: z.string().optional(),
+            name: z.string().optional(),
+            status: z.enum(['success', 'error']).optional(),
+            data: z.unknown().optional(),
+            content: z.unknown().optional(),
+            error: z.string().optional()
+          })
+        )
+        .optional()
+    })
+    .optional()
+    .describe('Optional evidence fetched by the host from Figma MCP before calling UX Assistant'),
   designSystem: z
     .enum(['generic', 'external', 'custom', 'none'])
     .optional()

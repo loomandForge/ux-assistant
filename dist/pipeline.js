@@ -1,6 +1,6 @@
-import { createRequire } from 'node:module';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
+import { loadGuidelineParameters, runDeterministicScoring } from '@ux-assistant/scoring';
 import { buildMarkdownReport } from './report.js';
 import { generateNarrative } from './llm.js';
 import { resolveReviewInput } from './input-detect.js';
@@ -11,10 +11,8 @@ import { parseDesignSystemMode } from './design-system.js';
 import { buildDesignSystemEvidence } from './design-system-evidence.js';
 import { extractDesignData } from './design-data-extract.js';
 import { ingestBriefContext } from './adapters/brief-adapter.js';
-import { ingestFigmaInput } from './adapters/figma-adapter.js';
+import { hasFigmaEvidence, ingestFigmaEvidenceInput, ingestFigmaInput } from './adapters/figma-adapter.js';
 import { ingestHtmlInput, ingestImagePathInput, ingestWebInput } from './adapters/image-adapter.js';
-const require = createRequire(import.meta.url);
-const { runDeterministicScoring, loadGuidelineParameters } = require('@ux-assistant/scoring');
 const STAGE_PROGRESS = {
     queued: 0,
     fetching_input: 1,
@@ -230,6 +228,16 @@ export async function reviewInput(request, storage, debug = false, onProgress, m
             }
         }
         if (resolved.type === 'figma_url') {
+            if (hasFigmaEvidence(request.figmaEvidence)) {
+                const figmaPayload = ingestFigmaEvidenceInput({
+                    figmaUrl: resolved.value,
+                    figmaEvidence: request.figmaEvidence,
+                    runId,
+                    storage,
+                    strategicContext
+                });
+                return await runScoringAndPersist('figma_url', figmaPayload.source, figmaPayload.bundle, runId, storage, designSystemConfig, debug, onProgress);
+            }
             const figmaPayload = await ingestFigmaInput({
                 figmaUrl: resolved.value,
                 runId,
@@ -275,6 +283,7 @@ export async function reviewFigma(figmaUrl, storage, debug = false, designSystem
         figmaUrl,
         designSystem: designSystemConfig?.designSystem,
         customGuidelinePath: designSystemConfig?.customGuidelinePath,
+        figmaEvidence: designSystemConfig?.figmaEvidence,
         problemStatement: designSystemConfig?.problemStatement,
         proposedSolution: designSystemConfig?.proposedSolution,
         requirements: designSystemConfig?.requirements
