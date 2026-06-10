@@ -34,6 +34,7 @@ The format is based on Keep a Changelog and this project aims to follow Semantic
 - README, GitLab CI, and package scripts now use pnpm-first setup and verification commands.
 - Remote `review_figma` and `review_input` xmcp tools now run the UX review pipeline instead of returning Phase 1 migration placeholders.
 - Remote `challenge_design`, `improve_design`, and `pitch_design` xmcp tools now synthesize from existing review runs instead of returning Phase 1 placeholders.
+- Remote review helper code now lives outside the xmcp tool discovery folder so it is not exposed as a public `remote-review` tool.
 - Remote xmcp review runs now use serverless-safe in-memory storage instead of loading local SQLite at Vercel startup.
 - Remote screenshot capture defaults to Vercel's writable temp directory instead of a home-directory path.
 - Web and HTML input reviews now continue with metadata/design-context evidence when screenshot capture is unavailable in serverless environments.

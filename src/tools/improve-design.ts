@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { type InferSchema, type ToolMetadata } from 'xmcp';
-import { runRemotePerspective } from './remote-review.js';
+import { runRemotePerspective } from '../remote-review.js';
 
 export const schema = {
   runId: z.number().int().positive().describe('Review run ID from review_figma or review_input'),

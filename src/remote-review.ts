@@ -1,8 +1,8 @@
-import type { ReviewStorage } from '../storage.js';
-import { reviewFigma, reviewInput, type ReviewResult } from '../pipeline.js';
-import type { FigmaEvidenceInput, ReviewInputRequest } from '../input-detect.js';
-import { extractDesignData } from '../design-data-extract.js';
-import { generatePerspectiveReport, type PerspectiveContext, type PerspectiveMode } from '../llm.js';
+import type { ReviewStorage } from './storage.js';
+import { reviewFigma, reviewInput, type ReviewResult } from './pipeline.js';
+import type { FigmaEvidenceInput, ReviewInputRequest } from './input-detect.js';
+import { extractDesignData } from './design-data-extract.js';
+import { generatePerspectiveReport, type PerspectiveContext, type PerspectiveMode } from './llm.js';
 
 type StoredRun = {
   id: number;

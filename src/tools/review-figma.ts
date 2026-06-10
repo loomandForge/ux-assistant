@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { type InferSchema, type ToolMetadata } from 'xmcp';
-import { runRemoteFigmaReview } from './remote-review.js';
+import { runRemoteFigmaReview } from '../remote-review.js';
 
 export const schema = {
   figmaUrl: z.string().describe('Full Figma URL to review'),

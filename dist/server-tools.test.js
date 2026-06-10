@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { reviewInput } from './pipeline.js';
@@ -39,6 +39,7 @@ test('remote review tools call the pipeline instead of Phase 1 placeholders', ()
     assert.doesNotMatch(remoteInputToolSource, /Phase 1|registered for remote discovery|being completed separately/);
 });
 test('remote follow-up tools synthesize from existing review runs', () => {
+    assert.equal(existsSync(join(process.cwd(), 'src', 'tools', 'remote-review.ts')), false);
     assert.match(remoteChallengeToolSource, /runRemotePerspective/);
     assert.match(remoteImproveToolSource, /runRemotePerspective/);
     assert.match(remotePitchToolSource, /runRemotePerspective/);
