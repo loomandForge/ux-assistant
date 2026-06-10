@@ -1,14 +1,93 @@
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
-import { ReviewStorage } from '../storage.js';
+import type { ReviewStorage } from '../storage.js';
 import { reviewFigma, reviewInput, type ReviewResult } from '../pipeline.js';
 import type { ReviewInputRequest } from '../input-detect.js';
 
+type StoredRun = {
+  id: number;
+  inputRef: string;
+  created_at: string;
+  status: string;
+  stage: string;
+  stage_message: string;
+  error?: string;
+};
+
+class RemoteReviewStorage {
+  private nextRunId = 1;
+  private runs = new Map<number, StoredRun>();
+  private reports = new Map<number, { markdown: string; detail?: unknown }>();
+
+  createRun(inputRef: string, _fileKey: string | null, _nodeId: string | null): number {
+    const id = this.nextRunId++;
+    this.runs.set(id, {
+      id,
+      inputRef,
+      created_at: new Date().toISOString(),
+      status: 'running',
+      stage: 'queued',
+      stage_message: 'Review request queued'
+    });
+    return id;
+  }
+
+  updateStage(runId: number, stage: string, stageMessage: string): void {
+    const run = this.runs.get(runId);
+    if (run) {
+      run.stage = stage;
+      run.stage_message = stageMessage;
+    }
+  }
+
+  updateDesignSystemFindings(_runId: number, _mode: string, _findings?: unknown): void {}
+
+  addToolCall(
+    _runId: number,
+    _toolName: string,
+    _status: string,
+    _rawJson?: unknown,
+    _error?: string
+  ): void {}
+
+  addArtifact(_runId: number, _kind: string, _path?: string, _sourceUrl?: string): void {}
+
+  getRun(runId: number): StoredRun | undefined {
+    return this.runs.get(runId);
+  }
+
+  saveReport(runId: number, markdown: string, detail?: unknown): void {
+    this.reports.set(runId, { markdown, detail });
+  }
+
+  getReport(runId: number): string | undefined {
+    return this.reports.get(runId)?.markdown;
+  }
+
+  getReportDetail(runId: number): unknown | undefined {
+    return this.reports.get(runId)?.detail;
+  }
+
+  completeRun(runId: number): void {
+    const run = this.runs.get(runId);
+    if (run) {
+      run.status = 'completed';
+      run.stage = 'completed';
+      run.stage_message = 'Review completed';
+    }
+  }
+
+  failRun(runId: number, error: string): void {
+    const run = this.runs.get(runId);
+    if (run) {
+      run.status = 'failed';
+      run.error = error;
+    }
+  }
+}
+
 let storage: ReviewStorage | undefined;
-const REMOTE_DB_PATH = join(tmpdir(), 'ux-review-remote', 'reviews.db');
 
 const getStorage = (): ReviewStorage => {
-  storage ??= new ReviewStorage(process.env.UX_REVIEW_REMOTE_DB_PATH ?? REMOTE_DB_PATH);
+  storage ??= new RemoteReviewStorage() as unknown as ReviewStorage;
   return storage;
 };
 

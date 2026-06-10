@@ -3,7 +3,7 @@ import type { ScoringBundle } from '@ux-assistant/scoring';
 import { parseFigmaUrl } from '../figma-url.js';
 import { fetchFigmaData } from '../figma-client.js';
 import { gatherContextWithTools, GatheredContext } from '../context-gather.js';
-import { ReviewStorage } from '../storage.js';
+import type { ReviewStorage } from '../storage.js';
 
 type IngestFigmaInputOptions = {
   figmaUrl: string;

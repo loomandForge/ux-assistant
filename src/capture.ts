@@ -1,9 +1,12 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 
-const SCREENSHOT_DIR =
-  process.env.UX_REVIEW_SCREENSHOT_DIR ?? join(homedir(), '.ux-review', 'screenshots');
+const resolveScreenshotDir = (): string =>
+  process.env.UX_REVIEW_SCREENSHOT_DIR ??
+  (process.env.VERCEL
+    ? join(tmpdir(), 'ux-review', 'screenshots')
+    : join(homedir(), '.ux-review', 'screenshots'));
 
 const nowStamp = (): string =>
   new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').replace('Z', '');
@@ -13,7 +16,7 @@ const getExecutablePath = (): string | undefined => {
 };
 
 const ensureScreenshotDir = async (): Promise<void> => {
-  await mkdir(SCREENSHOT_DIR, { recursive: true });
+  await mkdir(resolveScreenshotDir(), { recursive: true });
 };
 
 const launchBrowser = async () => {
@@ -27,7 +30,7 @@ const launchBrowser = async () => {
 
 export const captureWebUrlScreenshot = async (url: string): Promise<string> => {
   await ensureScreenshotDir();
-  const filePath = join(SCREENSHOT_DIR, `web_${nowStamp()}.png`);
+  const filePath = join(resolveScreenshotDir(), `web_${nowStamp()}.png`);
 
   const browser = await launchBrowser();
   try {
@@ -42,7 +45,7 @@ export const captureWebUrlScreenshot = async (url: string): Promise<string> => {
 
 export const captureHtmlScreenshot = async (html: string): Promise<string> => {
   await ensureScreenshotDir();
-  const filePath = join(SCREENSHOT_DIR, `html_${nowStamp()}.png`);
+  const filePath = join(resolveScreenshotDir(), `html_${nowStamp()}.png`);
 
   const browser = await launchBrowser();
   try {
@@ -57,7 +60,7 @@ export const captureHtmlScreenshot = async (html: string): Promise<string> => {
 
 export const persistInlineImage = async (base64Png: string): Promise<string> => {
   await ensureScreenshotDir();
-  const filePath = join(SCREENSHOT_DIR, `inline_${nowStamp()}.png`);
+  const filePath = join(resolveScreenshotDir(), `inline_${nowStamp()}.png`);
   const cleaned = base64Png.replace(/^data:image\/png;base64,/, '');
   await writeFile(filePath, Buffer.from(cleaned, 'base64'));
   return filePath;
