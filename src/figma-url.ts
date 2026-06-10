@@ -24,7 +24,8 @@ export function parseFigmaUrl(url: string): FigmaUrlParts {
     throw new Error(`Invalid URL: ${url}`);
   }
 
-  if (!parsed.hostname.includes('figma.com')) {
+  const hostname = parsed.hostname.toLowerCase();
+  if (hostname !== 'figma.com' && !hostname.endsWith('.figma.com')) {
     throw new Error(`Not a Figma URL: ${url}`);
   }
 
