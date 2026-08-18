@@ -1,0 +1,470 @@
+{
+  "scenario": {
+    "scenarioId": "scenario-001",
+    "title": "Energy consumption increased 18%",
+    "baseline": {
+      "label": "Previous week",
+      "totalEnergyKwh": 1000,
+      "equipmentEnergyKwh": {
+        "hvac": 400,
+        "lighting": 200,
+        "otherLoads": 400
+      },
+      "hvacOperatingHoursPerDay": 8
+    },
+    "current": {
+      "label": "Current week",
+      "totalEnergyKwh": 1180,
+      "equipmentEnergyKwh": {
+        "hvac": 564,
+        "lighting": 204,
+        "otherLoads": 412
+      },
+      "hvacOperatingHoursPerDay": 11.1
+    },
+    "knownUnknowns": [
+      {
+        "id": "unknown.hvac-schedule-change-reason",
+        "statement": "The reason for the HVAC schedule change is unknown."
+      }
+    ],
+    "allowedAutonomyModes": [
+      "Assist",
+      "Investigate",
+      "Recommend"
+    ]
+  },
+  "analysis": {
+    "scenarioId": "scenario-001",
+    "facts": [
+      {
+        "id": "fact.total-energy-readings",
+        "statement": "Total energy was 1000 kWh in the baseline and 1180 kWh in the current period.",
+        "sourcePath": "baseline/current.totalEnergyKwh"
+      },
+      {
+        "id": "fact.energy-readings.hvac",
+        "statement": "HVAC energy was 400 kWh in the baseline and 564 kWh in the current period.",
+        "sourcePath": "baseline/current.equipmentEnergyKwh.hvac"
+      },
+      {
+        "id": "fact.energy-readings.lighting",
+        "statement": "Lighting energy was 200 kWh in the baseline and 204 kWh in the current period.",
+        "sourcePath": "baseline/current.equipmentEnergyKwh.lighting"
+      },
+      {
+        "id": "fact.energy-readings.other-loads",
+        "statement": "Other loads energy was 400 kWh in the baseline and 412 kWh in the current period.",
+        "sourcePath": "baseline/current.equipmentEnergyKwh.otherLoads"
+      },
+      {
+        "id": "fact.operating-hours.hvac",
+        "statement": "HVAC operated 8 hours per day in the baseline and 11.1 hours per day currently.",
+        "sourcePath": "baseline/current.hvacOperatingHoursPerDay"
+      }
+    ],
+    "calculations": {
+      "totalEnergyChange": {
+        "id": "calc.total-energy-change",
+        "baselineKwh": 1000,
+        "currentKwh": 1180,
+        "deltaKwh": 180,
+        "percentChange": 18
+      },
+      "equipmentContributions": [
+        {
+          "id": "calc.equipment-contribution.hvac",
+          "equipmentId": "hvac",
+          "label": "HVAC",
+          "baselineKwh": 400,
+          "currentKwh": 564,
+          "deltaKwh": 164,
+          "percentChange": 41,
+          "shareOfTotalIncreasePercent": 91.1
+        },
+        {
+          "id": "calc.equipment-contribution.lighting",
+          "equipmentId": "lighting",
+          "label": "Lighting",
+          "baselineKwh": 200,
+          "currentKwh": 204,
+          "deltaKwh": 4,
+          "percentChange": 2,
+          "shareOfTotalIncreasePercent": 2.2
+        },
+        {
+          "id": "calc.equipment-contribution.other-loads",
+          "equipmentId": "other-loads",
+          "label": "Other loads",
+          "baselineKwh": 400,
+          "currentKwh": 412,
+          "deltaKwh": 12,
+          "percentChange": 3,
+          "shareOfTotalIncreasePercent": 6.7
+        }
+      ],
+      "operatingHoursDelta": {
+        "id": "calc.operating-hours-delta.hvac",
+        "equipmentId": "hvac",
+        "baselineHoursPerDay": 8,
+        "currentHoursPerDay": 11.1,
+        "deltaHoursPerDay": 3.1
+      }
+    },
+    "hypotheses": [
+      {
+        "id": "hypothesis.extended-hvac-operation",
+        "statement": "Longer HVAC operating time may be contributing to the measured HVAC energy increase.",
+        "supportedBy": [
+          "calc.equipment-contribution.hvac",
+          "calc.operating-hours-delta.hvac"
+        ],
+        "confidence": "medium",
+        "limitation": "The measurements show correlation, not why the operating schedule changed or whether it is the sole cause."
+      }
+    ],
+    "unknowns": [
+      {
+        "id": "unknown.hvac-schedule-change-reason",
+        "statement": "The reason for the HVAC schedule change is unknown."
+      }
+    ],
+    "recommendedChecks": [
+      {
+        "id": "check.compare-hvac-schedule",
+        "label": "Compare the HVAC schedule with the previous week",
+        "rationale": "Confirm when the extra operating hours occurred before considering any schedule change.",
+        "evidenceRefs": [
+          "calc.equipment-contribution.hvac",
+          "calc.operating-hours-delta.hvac",
+          "hypothesis.extended-hvac-operation"
+        ],
+        "resolvesUnknowns": [
+          "unknown.hvac-schedule-change-reason"
+        ]
+      }
+    ],
+    "confidence": {
+      "score": 82,
+      "level": "high",
+      "rationale": "The energy and operating-hours comparisons are deterministic; the schedule-change reason remains unknown."
+    }
+  },
+  "experience": {
+    "scenarioId": "scenario-001",
+    "primaryMessage": {
+      "text": "Energy use increased 18%. HVAC accounts for 91.1% of the measured increase.",
+      "claimType": "calculation",
+      "evidenceRefs": [
+        "calc.total-energy-change",
+        "calc.equipment-contribution.hvac"
+      ]
+    },
+    "explanation": {
+      "summary": {
+        "text": "HVAC is the dominant measured contributor, and its longer operating time warrants investigation.",
+        "claimType": "calculation",
+        "evidenceRefs": [
+          "calc.equipment-contribution.hvac",
+          "calc.operating-hours-delta.hvac"
+        ]
+      },
+      "claims": [
+        {
+          "text": "HVAC energy rose 41% and operating time increased 3.1 hours per day.",
+          "claimType": "calculation",
+          "evidenceRefs": [
+            "calc.equipment-contribution.hvac",
+            "calc.operating-hours-delta.hvac"
+          ]
+        },
+        {
+          "text": "The longer operating time may be contributing to the HVAC increase, but it does not establish the cause.",
+          "claimType": "hypothesis",
+          "evidenceRefs": [
+            "hypothesis.extended-hvac-operation",
+            "calc.equipment-contribution.hvac",
+            "calc.operating-hours-delta.hvac"
+          ],
+          "uncertaintyNote": "The measurements show correlation, not why the operating schedule changed or whether it is the sole cause."
+        },
+        {
+          "text": "The reason for the HVAC schedule change is unknown.",
+          "claimType": "unknown",
+          "evidenceRefs": [
+            "unknown.hvac-schedule-change-reason"
+          ],
+          "uncertaintyNote": "No cause is asserted until the schedule records are checked."
+        }
+      ]
+    },
+    "evidence": [
+      {
+        "id": "evidence.total-energy-change",
+        "label": "Total energy",
+        "value": "+18% (180 kWh)",
+        "visible": true,
+        "sourceRefs": [
+          "calc.total-energy-change"
+        ]
+      },
+      {
+        "id": "evidence.hvac-contribution",
+        "label": "HVAC contribution",
+        "value": "+41% energy; 91.1% of total increase",
+        "visible": true,
+        "sourceRefs": [
+          "calc.equipment-contribution.hvac"
+        ]
+      },
+      {
+        "id": "evidence.hvac-operating-hours",
+        "label": "HVAC operating time",
+        "value": "+3.1 hours/day",
+        "visible": true,
+        "sourceRefs": [
+          "calc.operating-hours-delta.hvac"
+        ]
+      },
+      {
+        "id": "evidence.working-hypothesis",
+        "label": "Working hypothesis",
+        "value": "Longer HVAC operating time may be contributing",
+        "visible": true,
+        "sourceRefs": [
+          "hypothesis.extended-hvac-operation"
+        ]
+      },
+      {
+        "id": "evidence.schedule-change-reason",
+        "label": "Schedule-change reason",
+        "value": "Unknown",
+        "visible": true,
+        "sourceRefs": [
+          "unknown.hvac-schedule-change-reason"
+        ]
+      }
+    ],
+    "primaryAction": {
+      "id": "action.investigate-hvac-schedule",
+      "label": "Investigate HVAC schedule",
+      "description": "Compare the HVAC schedule with the previous week",
+      "autonomyMode": "Investigate",
+      "axStage": "PLAN",
+      "reversible": true,
+      "changesEquipmentState": false,
+      "evidenceRefs": [
+        "check.compare-hvac-schedule",
+        "unknown.hvac-schedule-change-reason",
+        "calc.operating-hours-delta.hvac"
+      ]
+    },
+    "secondaryActions": [
+      {
+        "id": "action.view-energy-evidence",
+        "label": "View calculation evidence",
+        "description": "Review the baseline, current readings, and contribution calculations.",
+        "autonomyMode": "Assist",
+        "axStage": "UNDERSTAND",
+        "reversible": true,
+        "changesEquipmentState": false,
+        "evidenceRefs": [
+          "calc.total-energy-change",
+          "calc.equipment-contribution.hvac",
+          "calc.operating-hours-delta.hvac"
+        ]
+      }
+    ],
+    "hiddenDetails": [
+      {
+        "label": "Lighting change",
+        "value": "+2% (4 kWh)",
+        "reasonHidden": "Supporting load detail is not needed to understand the primary increase.",
+        "priority": "supporting",
+        "sourceRefs": [
+          "calc.equipment-contribution.lighting"
+        ]
+      },
+      {
+        "label": "Other-load change",
+        "value": "+3% (12 kWh)",
+        "reasonHidden": "Supporting load detail is available on demand.",
+        "priority": "supporting",
+        "sourceRefs": [
+          "calc.equipment-contribution.other-loads"
+        ]
+      },
+      {
+        "label": "Raw total-energy readings",
+        "value": "1000 kWh → 1180 kWh",
+        "reasonHidden": "Raw readings support the headline calculation but are secondary detail.",
+        "priority": "technical",
+        "sourceRefs": [
+          "fact.total-energy-readings"
+        ]
+      }
+    ],
+    "trustElements": {
+      "confidence": {
+        "score": 82,
+        "label": "high",
+        "text": "The energy and operating-hours comparisons are deterministic; the schedule-change reason remains unknown.",
+        "sourceRefs": [
+          "calc.total-energy-change",
+          "calc.equipment-contribution.hvac",
+          "calc.operating-hours-delta.hvac"
+        ]
+      },
+      "uncertainty": {
+        "text": "Extended HVAC operation is a working hypothesis; the reason for the schedule change is still unknown.",
+        "sourceRefs": [
+          "hypothesis.extended-hvac-operation",
+          "unknown.hvac-schedule-change-reason"
+        ]
+      },
+      "evidenceBasis": {
+        "text": "The recommendation uses measured weekly energy and HVAC operating-hours comparisons.",
+        "sourceRefs": [
+          "fact.total-energy-readings",
+          "fact.energy-readings.hvac",
+          "fact.operating-hours.hvac"
+        ]
+      },
+      "autonomyBoundary": {
+        "text": "AI may assist, investigate, and recommend; it may not change schedules or control equipment.",
+        "allowedModes": [
+          "Assist",
+          "Investigate",
+          "Recommend"
+        ],
+        "prohibitedCapabilities": [
+          "change_schedule",
+          "control_equipment"
+        ]
+      }
+    }
+  },
+  "ax": {
+    "scenarioId": "scenario-001",
+    "stagePath": [
+      "SEE",
+      "UNDERSTAND",
+      "PLAN",
+      "ACT",
+      "VERIFY"
+    ],
+    "currentStage": "UNDERSTAND",
+    "recommendedStage": "PLAN",
+    "selectedAutonomy": "Investigate",
+    "allowedAutonomyModes": [
+      "Assist",
+      "Investigate",
+      "Recommend"
+    ],
+    "aiCan": [
+      "analyze_energy_data",
+      "compare_periods",
+      "explain_evidence",
+      "recommend_check"
+    ],
+    "aiCannot": [
+      "change_schedule",
+      "control_equipment"
+    ],
+    "suggestedNextStep": {
+      "id": "action.investigate-hvac-schedule",
+      "label": "Investigate HVAC schedule",
+      "description": "Compare the HVAC schedule with the previous week",
+      "autonomyMode": "Investigate",
+      "axStage": "PLAN",
+      "reversible": true,
+      "changesEquipmentState": false,
+      "evidenceRefs": [
+        "check.compare-hvac-schedule",
+        "unknown.hvac-schedule-change-reason",
+        "calc.operating-hours-delta.hvac"
+      ]
+    },
+    "verification": {
+      "stage": "VERIFY",
+      "successCriteria": [
+        "The extra HVAC operating window is identified in schedule records.",
+        "The schedule-change reason is confirmed by an authorized person or remains explicitly unknown.",
+        "No equipment schedule is changed by this investigation."
+      ],
+      "evidenceRefs": [
+        "check.compare-hvac-schedule",
+        "unknown.hvac-schedule-change-reason"
+      ]
+    }
+  },
+  "critics": {
+    "passed": true,
+    "results": [
+      {
+        "criticId": "electrical",
+        "passed": true,
+        "score": 100,
+        "checks": [
+          {
+            "id": "unsupported_claims",
+            "status": "pass",
+            "severity": "high",
+            "confidence": "high",
+            "evidence": [
+              "All 5 experience claims and all analysis hypotheses/checks resolve to measured or calculated evidence."
+            ],
+            "recommendation": "Remove unsupported claims or attach them to a fact, calculation, hypothesis, unknown, or recommended check."
+          },
+          {
+            "id": "uncertainty",
+            "status": "pass",
+            "severity": "medium",
+            "confidence": "high",
+            "evidence": [
+              "Hypotheses and unknowns are labeled, qualified, and surfaced in the trust elements."
+            ],
+            "recommendation": "Label hypotheses and unknowns explicitly, add limitations, and surface them in the trust layer."
+          }
+        ]
+      },
+      {
+        "criticId": "experience-ax",
+        "passed": true,
+        "score": 100,
+        "checks": [
+          {
+            "id": "evidence_visibility",
+            "status": "pass",
+            "severity": "high",
+            "confidence": "high",
+            "evidence": [
+              "All 5 evidence references behind the primary message and explanation are visible."
+            ],
+            "recommendation": "Expose the evidence behind the primary message and explanation before presenting the action."
+          },
+          {
+            "id": "progressive_disclosure",
+            "status": "pass",
+            "severity": "medium",
+            "confidence": "high",
+            "evidence": [
+              "One primary action and five essential evidence items are shown; supporting load and raw-reading detail is deferred."
+            ],
+            "recommendation": "Keep one primary action visible and defer supporting load or technical telemetry."
+          },
+          {
+            "id": "autonomy_safety",
+            "status": "pass",
+            "severity": "high",
+            "confidence": "high",
+            "evidence": [
+              "Scenario 001 stays within Assist/Investigate/Recommend and cannot change schedules or control equipment."
+            ],
+            "recommendation": "Restrict Scenario 001 to Assist, Investigate, and Recommend; keep all control actions human-owned."
+          }
+        ]
+      }
+    ]
+  }
+}

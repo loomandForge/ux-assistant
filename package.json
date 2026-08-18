@@ -27,6 +27,7 @@
     "doctor": "node ./scripts/doctor.mjs",
     "typecheck": "tsc --noEmit",
     "test": "pnpm run build && node --test dist/contract.test.js dist/storage.test.js dist/validation-engine.test.js dist/report.test.js dist/server-tools.test.js dist/validators/validators.test.js dist/electrical-experience-lab/electrical-experience.test.js",
+    "prototype:electrical": "pnpm run build && node ./scripts/export-electrical-prototype.mjs",
     "start": "node dist/cli.js",
     "auto-update:enable": "sh ./scripts/enable-auto-update.sh",
     "auto-update:pull": "sh ./scripts/auto-update.sh main",

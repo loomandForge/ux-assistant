@@ -23,6 +23,19 @@ The server supports two complementary modes:
 1. Review mode (UX critique, challenge, improvement, and pitch narratives)
 2. Validation mode (context-pack compliance, correction prompts, and run comparison)
 
+### Electrical Experience Lab
+
+The Electrical Experience Lab is an isolated experiment alongside the MCP review flow. Scenario
+001 turns deterministic energy calculations into an evidence-backed experience recommendation,
+bounded AX guidance, and critic results.
+
+- Engine: [`src/electrical-experience-lab/`](src/electrical-experience-lab/)
+- Read-only prototype: [`docs/electrical-experience-lab/`](docs/electrical-experience-lab/)
+- Regenerate prototype data: `pnpm prototype:electrical`
+
+The included measurements are synthetic fixture data for interface evaluation. They are not an
+electrical diagnosis or evidence of model performance.
+
 ## Visual Architecture
 
 ```mermaid
