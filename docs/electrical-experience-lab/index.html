@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A read-only Electrical Experience Lab prototype for investigating a measured energy increase."
+      content="A read-only Electrical Experience Lab demo that interprets PowerManager PDF reports."
     />
-    <title>Scenario 001 | Electrical Experience Lab</title>
+    <title>Report interpretation demo | Electrical Experience Lab</title>
     <link rel="stylesheet" href="styles.css" />
-    <script src="app.js" defer></script>
+    <script src="app.js" type="module"></script>
   </head>
   <body>
     <header class="lab-header">
@@ -19,21 +19,159 @@
       </a>
       <div class="lab-identity">
         <span>Electrical Experience Lab</span>
-        <span id="scenario-id">Scenario 001</span>
+        <span id="scenario-id">Report demo</span>
       </div>
     </header>
 
     <main>
-      <section id="loading-state" class="system-state" aria-live="polite">
-        <p>Loading deterministic scenario analysis...</p>
+      <section id="import-workspace" class="import-workspace" aria-labelledby="import-heading">
+        <div class="import-copy">
+          <p class="context-label">Report interpretation demo</p>
+          <h1 id="import-heading">Interpret a PowerManager report.</h1>
+          <p class="summary">
+            Upload a PDF to extract its device name, measured values, and evidence-backed recommendations.
+          </p>
+          <div class="import-boundary">
+            <strong>What stays fixed</strong>
+            <p>Device and measurement-point names remain exactly as written in the report.</p>
+          </div>
+        </div>
+
+        <form id="report-form" class="upload-panel">
+          <label class="upload-field" for="report-file">
+            <span>PowerManager PDF</span>
+            <strong id="file-prompt">Choose a report</strong>
+            <small>Supported now: Absolute Energy, Total Energy, Power Peak, and Load Variance.</small>
+          </label>
+          <input id="report-file" name="report" type="file" accept="application/pdf,.pdf" />
+          <div id="selected-file" class="selected-file" aria-live="polite">No report selected</div>
+          <button id="analyze-report" class="primary-action" type="submit" disabled>
+            Generate insights
+          </button>
+          <p class="privacy-note">The PDF is processed in this browser. It is not uploaded to a server.</p>
+        </form>
       </section>
 
-      <section id="error-state" class="system-state error-state" hidden>
-        <h1>Scenario data could not be loaded.</h1>
-        <p>Serve this folder over HTTP and regenerate the checked-in fixture data.</p>
+      <section id="report-processing" class="report-processing" aria-live="polite" hidden>
+        <div class="processing-line" aria-hidden="true"></div>
+        <div>
+          <h2>Reading report evidence</h2>
+          <p id="processing-status">Opening the PDF...</p>
+        </div>
       </section>
 
-      <div id="experience" hidden>
+      <section id="report-error" class="report-error" role="alert" hidden>
+        <div>
+          <h2>The report could not be interpreted.</h2>
+          <p id="report-error-message"></p>
+        </div>
+        <button id="retry-report" class="secondary-action" type="button">Choose another report</button>
+      </section>
+
+      <section
+        id="report-results"
+        class="report-results"
+        aria-labelledby="report-result-heading"
+        tabindex="-1"
+        hidden
+      >
+        <div class="result-header">
+          <div>
+            <p id="result-report-type" class="context-label"></p>
+            <h1 id="report-result-heading"></h1>
+            <p id="result-summary" class="summary"></p>
+          </div>
+          <button id="replace-report" class="secondary-action" type="button">Analyze another report</button>
+        </div>
+
+        <div class="result-signal-layout">
+          <aside class="signal-panel" aria-label="Primary extracted signal">
+            <div class="headline-metric">
+              <span id="result-primary-value" class="metric-value"></span>
+              <span id="result-primary-label"></span>
+            </div>
+            <dl>
+              <div>
+                <dt>Device name</dt>
+                <dd id="result-device"></dd>
+              </div>
+              <div>
+                <dt>Measurement point</dt>
+                <dd id="result-measurement"></dd>
+              </div>
+              <div>
+                <dt>Time range</dt>
+                <dd id="result-time-range"></dd>
+              </div>
+              <div>
+                <dt>Source</dt>
+                <dd id="result-source"></dd>
+              </div>
+            </dl>
+          </aside>
+
+          <div class="interpretation-panel">
+            <p class="context-label">Interpretation</p>
+            <h2>What this report supports</h2>
+            <p id="interpretation-text"></p>
+            <div class="autonomy-row">
+              <span>Selected autonomy</span>
+              <strong>Investigate</strong>
+            </div>
+            <p class="fixture-note">Read-only analysis. No equipment setting or schedule is changed.</p>
+          </div>
+        </div>
+
+        <section class="report-evidence" aria-labelledby="report-evidence-heading">
+          <div class="section-intro">
+            <h2 id="report-evidence-heading">Extracted evidence</h2>
+            <p>Every recommendation below is traceable to these report fields and calculations.</p>
+          </div>
+          <div id="report-evidence-grid" class="evidence-grid"></div>
+        </section>
+
+        <section class="recommendation-section" aria-labelledby="recommendation-heading">
+          <div class="section-intro">
+            <h2 id="recommendation-heading">Recommended investigation</h2>
+            <p>Checks remain reversible and require a person to confirm the operational context.</p>
+          </div>
+          <div id="recommendation-list" class="recommendation-list"></div>
+        </section>
+
+        <section class="report-trust" aria-labelledby="report-trust-heading">
+          <div>
+            <h2 id="report-trust-heading">What remains unknown</h2>
+            <ul id="report-unknowns"></ul>
+          </div>
+          <aside class="trust-panel">
+            <div class="confidence-readout">
+              <span aria-hidden="true">PDF</span>
+              <div>
+                <strong id="extraction-label"></strong>
+                <p id="extraction-detail"></p>
+              </div>
+            </div>
+            <div class="trust-copy">
+              <h3>Boundary</h3>
+              <p id="page-boundary"></p>
+            </div>
+          </aside>
+        </section>
+      </section>
+
+      <details class="sample-disclosure">
+        <summary>View the original synthetic Scenario 001 example</summary>
+        <div class="sample-content">
+          <section id="loading-state" class="system-state" aria-live="polite">
+            <p>Loading deterministic scenario analysis...</p>
+          </section>
+
+          <section id="error-state" class="system-state error-state" hidden>
+            <h1>Scenario data could not be loaded.</h1>
+            <p>Serve this folder over HTTP and regenerate the checked-in fixture data.</p>
+          </section>
+
+          <div id="experience" hidden>
         <section class="experience-hero" aria-labelledby="primary-message">
           <div class="hero-copy">
             <p class="context-label">Current observation</p>
@@ -166,11 +304,13 @@
           <summary>View supporting load details</summary>
           <div id="hidden-details" class="hidden-details"></div>
         </details>
-      </div>
+          </div>
+        </div>
+      </details>
     </main>
 
     <footer>
-      <p>Read-only prototype. Equipment control remains human-owned.</p>
+      <p>Read-only prototype. Report files stay in the browser and equipment control remains human-owned.</p>
       <a href="https://github.com/loomandForge/ux-assistant" target="_blank" rel="noopener noreferrer">
         View repository
       </a>

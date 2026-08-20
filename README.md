@@ -25,16 +25,20 @@ The server supports two complementary modes:
 
 ### Electrical Experience Lab
 
-The Electrical Experience Lab is an isolated experiment alongside the MCP review flow. Scenario
-001 turns deterministic energy calculations into an evidence-backed experience recommendation,
-bounded AX guidance, and critic results.
+The Electrical Experience Lab is an isolated experiment alongside the MCP review flow. It includes
+a browser-based PDF report demo and the original deterministic Scenario 001 example. The report
+demo extracts native PowerManager PDF text, keeps device and measurement-point names unchanged,
+and turns supported readings into evidence-backed investigation recommendations.
 
 - Engine: [`src/electrical-experience-lab/`](src/electrical-experience-lab/)
-- Read-only prototype: [`docs/electrical-experience-lab/`](docs/electrical-experience-lab/)
-- Regenerate prototype data: `pnpm prototype:electrical`
+- Report demo and read-only prototype: [`docs/electrical-experience-lab/`](docs/electrical-experience-lab/)
+- Supported report interpreters: Absolute Energy, Total Energy, Power Peak, and Load Variance
+- Regenerate Scenario 001 data and vendored PDF parser: `pnpm prototype:electrical`
 
-The included measurements are synthetic fixture data for interface evaluation. They are not an
-electrical diagnosis or evidence of model performance.
+Uploaded PDFs are processed locally in the browser. The report demo does not upload files, rename
+devices, diagnose root cause, or control equipment. It inspects at most 12 pages per report and
+states when a larger report was only partially read. Scenario 001 measurements remain synthetic
+fixture data for interface evaluation, not an electrical diagnosis or evidence of model performance.
 
 ## Visual Architecture
 

@@ -1,4 +1,8 @@
+import { analyzePdfReport } from './report-analysis.js';
+
 const byId = id => document.getElementById(id);
+
+let selectedReport = null;
 
 const formatCapability = capability => capability.replaceAll('_', ' ');
 
@@ -87,6 +91,91 @@ const renderHiddenDetails = details => {
   }
 };
 
+const renderReportEvidence = evidence => {
+  const grid = byId('report-evidence-grid');
+  grid.replaceChildren();
+
+  for (const item of evidence) {
+    const article = document.createElement('article');
+    const label = document.createElement('h3');
+    const value = document.createElement('p');
+    label.textContent = item.label;
+    value.textContent = item.value;
+    article.append(label, value);
+    grid.append(article);
+  }
+};
+
+const renderRecommendations = recommendations => {
+  const list = byId('recommendation-list');
+  list.replaceChildren();
+
+  for (const recommendation of recommendations) {
+    const article = document.createElement('article');
+    const title = document.createElement('h3');
+    const rationale = document.createElement('p');
+    title.textContent = recommendation.title;
+    rationale.textContent = recommendation.rationale;
+    article.append(title, rationale);
+    list.append(article);
+  }
+};
+
+const renderReportAnalysis = analysis => {
+  byId('result-report-type').textContent = analysis.reportType;
+  byId('report-result-heading').textContent = analysis.primary.title;
+  byId('result-summary').textContent = analysis.primary.summary;
+  byId('result-primary-value').textContent = analysis.primary.value;
+  byId('result-primary-label').textContent = `${analysis.primary.label} (${analysis.primary.unit})`;
+  byId('result-device').textContent = analysis.deviceName;
+  byId('result-measurement').textContent = analysis.measurementPoint;
+  byId('result-time-range').textContent = analysis.timeRange;
+  byId('result-source').textContent = analysis.sourceFile;
+  byId('interpretation-text').textContent =
+    `${analysis.primary.summary} ${analysis.unknowns[0]}`;
+  byId('extraction-label').textContent = analysis.extraction.label;
+  byId('extraction-detail').textContent = analysis.extraction.detail;
+  byId('page-boundary').textContent = analysis.truncated
+    ? `The first ${analysis.pagesProcessed} of ${analysis.totalPages} pages were inspected. Use a smaller export for full coverage.`
+    : `All ${analysis.totalPages} report pages were inspected.`;
+
+  renderReportEvidence(analysis.evidence);
+  renderRecommendations(analysis.recommendations);
+  addListItems(byId('report-unknowns'), analysis.unknowns);
+
+  byId('import-workspace').hidden = true;
+  byId('report-processing').hidden = true;
+  byId('report-error').hidden = true;
+  byId('report-results').hidden = false;
+  if (window.location.hash) {
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+  }
+  byId('report-results').focus({ preventScroll: true });
+  byId('report-results').scrollIntoView({ block: 'start', behavior: 'auto' });
+};
+
+const resetReportFlow = () => {
+  selectedReport = null;
+  byId('report-form').reset();
+  byId('selected-file').textContent = 'No report selected';
+  byId('file-prompt').textContent = 'Choose a report';
+  byId('analyze-report').disabled = true;
+  byId('report-results').hidden = true;
+  byId('report-processing').hidden = true;
+  byId('report-error').hidden = true;
+  byId('import-workspace').hidden = false;
+  byId('report-file').focus({ preventScroll: true });
+  byId('import-workspace').scrollIntoView({ block: 'start' });
+};
+
+const showReportError = error => {
+  console.error(error);
+  byId('report-processing').hidden = true;
+  byId('report-results').hidden = true;
+  byId('report-error-message').textContent = error.message;
+  byId('report-error').hidden = false;
+};
+
 const render = payload => {
   const { scenario, analysis, experience, ax, critics } = payload;
   const total = analysis.calculations.totalEnergyChange;
@@ -100,7 +189,6 @@ const render = payload => {
     throw new Error('Scenario 001 is missing required analysis evidence.');
   }
 
-  byId('scenario-id').textContent = scenario.scenarioId.replace('-', ' ');
   const sentenceBoundary = experience.primaryMessage.text.indexOf('.');
   const headlineEnd =
     sentenceBoundary >= 0 ? sentenceBoundary + 1 : experience.primaryMessage.text.length;
@@ -154,6 +242,50 @@ byId('review-check').addEventListener('click', event => {
   panel.hidden = isOpen;
   if (!isOpen) panel.focus({ preventScroll: true });
 });
+
+byId('report-file').addEventListener('change', event => {
+  const [file] = event.currentTarget.files;
+  selectedReport = file ?? null;
+  byId('analyze-report').disabled = !selectedReport;
+
+  if (!selectedReport) {
+    byId('file-prompt').textContent = 'Choose a report';
+    byId('selected-file').textContent = 'No report selected';
+    return;
+  }
+
+  const size = selectedReport.size / (1024 * 1024);
+  byId('file-prompt').textContent = 'Report selected';
+  byId('selected-file').textContent = `${selectedReport.name} (${size.toFixed(1)} MB)`;
+});
+
+byId('report-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!selectedReport) return;
+
+  byId('report-error').hidden = true;
+  byId('report-processing').hidden = false;
+  byId('processing-status').textContent = 'Opening the PDF...';
+  byId('analyze-report').disabled = true;
+
+  try {
+    const analysis = await analyzePdfReport(selectedReport, progress => {
+      byId('processing-status').textContent =
+        `Extracting page ${progress.pageNumber} of ${progress.pageLimit}` +
+        (progress.totalPages > progress.pageLimit
+          ? ` (${progress.totalPages} pages in the report)`
+          : '');
+    });
+    renderReportAnalysis(analysis);
+  } catch (error) {
+    showReportError(error instanceof Error ? error : new Error('The report could not be read.'));
+  } finally {
+    byId('analyze-report').disabled = !selectedReport;
+  }
+});
+
+byId('replace-report').addEventListener('click', resetReportFlow);
+byId('retry-report').addEventListener('click', resetReportFlow);
 
 fetch('./scenario-001.json', { cache: 'no-store' })
   .then(response => {
