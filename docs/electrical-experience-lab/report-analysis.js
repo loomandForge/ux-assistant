@@ -60,6 +60,30 @@ const minutesBetween = (left, right) => {
   return Math.abs(leftTime - rightTime) / 60000;
 };
 
+const timeToMinutes = value => {
+  if (!/^\d{2}:\d{2}$/.test(value ?? '')) return null;
+  const [hour, minute] = value.split(':').map(Number);
+  if (hour > 23 || minute > 59) return null;
+  return hour * 60 + minute;
+};
+
+const timestampTimeMinutes = value => {
+  const match = value.match(/ (\d{2}):(\d{2})/);
+  if (!match) return null;
+  return Number(match[1]) * 60 + Number(match[2]);
+};
+
+const isOutsideOperatingHours = (timestamp, occupiedStart, occupiedEnd) => {
+  const eventMinutes = timestampTimeMinutes(timestamp);
+  const startMinutes = timeToMinutes(occupiedStart);
+  const endMinutes = timeToMinutes(occupiedEnd);
+  if (eventMinutes === null || startMinutes === null || endMinutes === null) return null;
+  const isOccupied = startMinutes <= endMinutes
+    ? eventMinutes >= startMinutes && eventMinutes <= endMinutes
+    : eventMinutes >= startMinutes || eventMinutes <= endMinutes;
+  return !isOccupied;
+};
+
 const shortTimestamp = value => {
   const [date, time] = value.split(' ');
   return `${time.slice(0, 5)} on ${date}`;
@@ -453,7 +477,7 @@ const reportSignal = report => {
   return `${formatNumber(report.metrics.maximum.value)} ${report.unit} at ${shortTimestamp(report.metrics.maximum.timestamp)}`;
 };
 
-const makeReportRequests = (alignedReports, hasMatchedBaseline) => {
+const makeReportRequests = (alignedReports, hasMatchedBaseline, context) => {
   const missingReports = INVESTIGATION_REPORTS
     .filter(required => !reportByType(alignedReports, required.reportType))
     .map(required => ({
@@ -477,14 +501,26 @@ const makeReportRequests = (alignedReports, hasMatchedBaseline) => {
           priority: 'Needed to confirm change',
         }]
       : []),
-    {
-      id: 'equipment-schedule',
-      kind: 'operational-data',
-      label: 'Equipment schedule or operating-hours export',
-      format: 'PDF export covering the event window',
-      reason: 'Identifies which scheduled load was expected to start at that time.',
-      priority: 'Needed to identify the trigger',
-    },
+    ...(!(context.occupiedStart && context.occupiedEnd)
+      ? [{
+          id: 'equipment-schedule',
+          kind: 'operational-data',
+          label: 'Expected operating hours',
+          format: 'Enter the occupied start and end time below',
+          reason: 'Checks whether the event happened outside the expected operating window.',
+          priority: 'Needed for off-hours analysis',
+        }]
+      : []),
+    ...(!(context.energyRatePerKwh > 0 && context.currency)
+      ? [{
+          id: 'energy-tariff',
+          kind: 'operational-data',
+          label: 'Energy tariff',
+          format: 'Enter currency and cost per kWh below',
+          reason: 'Required before the app can translate excess energy into an estimated cost.',
+          priority: 'Needed for impact estimation',
+        }]
+      : []),
     {
       id: 'event-log',
       kind: 'operational-data',
@@ -492,6 +528,149 @@ const makeReportRequests = (alignedReports, hasMatchedBaseline) => {
       format: 'PDF export covering 30 minutes before and after the event',
       reason: 'Checks for start-up events, trips, resets, or meter anomalies.',
       priority: 'Needed to confirm the cause',
+    },
+  ];
+};
+
+const makeImpactAssessment = ({
+  absoluteEnergy,
+  comparisonReports,
+  context,
+}) => {
+  const comparison = comparisonReports.find(
+    report => report.metrics?.kind === 'series' && report.unit.toLowerCase() === 'kwh',
+  );
+  const currentTotal = absoluteEnergy?.metrics?.kind === 'series'
+    ? absoluteEnergy.metrics.total
+    : null;
+  const comparisonTotal = comparison?.metrics?.total ?? null;
+  const comparableIntervals = Boolean(
+    absoluteEnergy?.metrics?.readingCount &&
+    absoluteEnergy.metrics.readingCount === comparison?.metrics?.readingCount,
+  );
+  const hasTariff = context.energyRatePerKwh > 0 && context.currency;
+
+  if (
+    currentTotal !== null &&
+    comparisonTotal !== null &&
+    comparableIntervals &&
+    hasTariff
+  ) {
+    const deltaKwh = currentTotal - comparisonTotal;
+    const percentChange = comparisonTotal
+      ? (deltaKwh / comparisonTotal) * 100
+      : null;
+    const estimatedCost = deltaKwh * context.energyRatePerKwh;
+    return {
+      status: 'estimated',
+      label: deltaKwh >= 0 ? 'Estimated excess energy cost' : 'Estimated energy reduction',
+      value: `${context.currency.toUpperCase()} ${formatNumber(Math.abs(estimatedCost))}`,
+      summary: `${formatNumber(Math.abs(deltaKwh))} kWh ${deltaKwh >= 0 ? 'above' : 'below'} the supplied comparison period${percentChange === null ? '' : ` (${formatRatio(Math.abs(percentChange))}% ${deltaKwh >= 0 ? 'higher' : 'lower'})`}.`,
+      evidence: [
+        `Current extracted interval sum: ${formatNumber(currentTotal)} kWh.`,
+        `Comparison extracted interval sum: ${formatNumber(comparisonTotal)} kWh.`,
+        `User-supplied energy rate: ${context.currency.toUpperCase()} ${formatNumber(context.energyRatePerKwh)} per kWh.`,
+      ],
+      missingInputs: [],
+      caveat: 'This estimate excludes demand charges, taxes, weather normalization, and production or occupancy changes. Confirm that the comparison period is operationally equivalent.',
+    };
+  }
+
+  const missingInputs = [
+    ...(!comparison ? ['Matched Absolute Energy comparison report'] : []),
+    ...(comparison && !comparableIntervals ? ['Comparison report with the same interval count'] : []),
+    ...(!hasTariff ? ['Energy tariff and currency'] : []),
+  ];
+
+  return {
+    status: 'needs-data',
+    label: 'Impact not calculated',
+    value: 'More data needed',
+    summary: 'The app will not show energy or cost savings until a comparable baseline and tariff are available.',
+    evidence: [],
+    missingInputs,
+    caveat: 'Demand-charge impact requires a separate demand tariff and matched peak-demand baseline.',
+  };
+};
+
+const makeVerificationPlan = ({ hasMatchedBaseline, hasSchedule, impactReady }) => [
+  {
+    title: 'Confirm the operating trigger',
+    when: 'Before changing any setting',
+    evidence: hasSchedule
+      ? 'Review the supplied operating hours against the event log and device hierarchy.'
+      : 'Add expected operating hours, the event log, and device hierarchy.',
+    success: 'A named device or process explains the event window without conflicting evidence.',
+  },
+  {
+    title: 'Lock the comparison baseline',
+    when: 'Before estimating benefit',
+    evidence: hasMatchedBaseline
+      ? 'Confirm that the supplied comparison has equivalent occupancy, production, and weather conditions.'
+      : 'Add an equivalent prior day or week with the same interval structure.',
+    success: 'The reviewer accepts the comparison period as operationally equivalent.',
+  },
+  {
+    title: 'Apply a human-approved change',
+    when: 'Only after the cause is confirmed',
+    evidence: 'Document the approved schedule, sequencing, or maintenance change and its rollback condition.',
+    success: 'The change is reversible, owned by a person, and does not bypass equipment safeguards.',
+  },
+  {
+    title: 'Verify the result',
+    when: 'After a matched operating period',
+    evidence: impactReady
+      ? 'Compare energy, peak demand, cost estimate, and operational outcomes with the locked baseline.'
+      : 'Repeat the same reports and compare energy and peak demand with the locked baseline.',
+    success: 'The target event is reduced without a new operational, comfort, or safety issue.',
+  },
+];
+
+const makeCapabilityRoadmap = ({
+  absoluteEnergy,
+  alignedReports,
+  comparisonReports,
+  context,
+}) => {
+  const hasSchedule = Boolean(context.occupiedStart && context.occupiedEnd);
+  const hasTariff = Boolean(context.energyRatePerKwh > 0 && context.currency);
+  const hasTotalEnergy = Boolean(reportByType(alignedReports, 'Total Energy'));
+
+  return [
+    {
+      title: 'Off-hours and schedule investigation',
+      status: absoluteEnergy && hasSchedule ? 'Ready now' : 'Add operating hours',
+      when: 'Use when an event may have happened before opening, after closing, or during an unoccupied period.',
+      requires: ['Absolute Energy report', 'Expected operating hours'],
+      outcome: 'Classifies whether the event occurred outside the supplied operating window.',
+    },
+    {
+      title: 'Energy and cost impact',
+      status: comparisonReports.length && hasTariff ? 'Ready now' : 'Add baseline and tariff',
+      when: 'Use after the anomaly pattern is understood and a credible comparison period is available.',
+      requires: ['Matched Absolute Energy report', 'Energy tariff and currency'],
+      outcome: 'Estimates the energy difference and tariff-based cost, with explicit exclusions.',
+    },
+    {
+      title: 'Largest-consumer attribution',
+      status: hasTotalEnergy ? 'Partial support' : 'Add parser support',
+      when: 'Use when the main question is which device or area contributed most to a site-level increase.',
+      requires: ['Top 10 Energy or Sankey parser', 'Device hierarchy', 'Total Energy report'],
+      outcome: 'Ranks contributors and connects the site-level change to named report devices.',
+    },
+    {
+      title: 'Equipment efficiency and maintenance',
+      status: 'Later',
+      when: 'Use only when energy can be paired with runtime and useful output such as cooling load or airflow.',
+      requires: ['Runtime or ON/OFF status', 'Output or capacity measurement', 'Matched historical performance'],
+      outcome: 'Detects efficiency degradation without mistaking higher production for waste.',
+    },
+    {
+      title: 'Automated optimization or control',
+      status: 'Not yet',
+      when: 'Consider only after recommendations are validated with practitioners and approval, rollback, and equipment safeguards are designed.',
+      requires: ['Validated recommendations', 'Human approval workflow', 'Control integration and rollback', 'Safety review'],
+      outcome: 'Remains outside this read-only prototype.',
     },
   ];
 };
@@ -541,7 +720,7 @@ const makePreliminaryHypotheses = ({ alignedReports, duplicateSeries }) => {
   ];
 };
 
-export const analyzeReportSet = reports => {
+export const analyzeReportSet = (reports, context = {}) => {
   if (!reports.length) throw new Error('Add at least one report to start an investigation.');
 
   const deviceName = mostCommon(
@@ -581,8 +760,18 @@ export const analyzeReportSet = reports => {
     peakSpreadMinutes !== null &&
     peakSpreadMinutes <= 45 &&
     seriesReports.filter(report => report.metrics?.isolatedPeak).length >= 2;
+  const hasSchedule = Boolean(context.occupiedStart && context.occupiedEnd);
+  const outsideSchedule = fullCorrelation && hasSchedule
+    ? peakTimes.every(timestamp =>
+        isOutsideOperatingHours(
+          timestamp,
+          context.occupiedStart,
+          context.occupiedEnd,
+        ) === true,
+      )
+    : false;
 
-  const hypotheses = fullCorrelation
+  let hypotheses = fullCorrelation
     ? [
         {
           id: 'short-duration-event',
@@ -630,24 +819,100 @@ export const analyzeReportSet = reports => {
       ]
     : makePreliminaryHypotheses({ alignedReports, duplicateSeries });
 
-  const requests = makeReportRequests(alignedReports, hasMatchedBaseline);
+  if (outsideSchedule) {
+    hypotheses = [
+      {
+        id: 'off-hours-operation',
+        rank: 1,
+        title: 'Operation outside expected hours',
+        status: 'Supported pattern',
+        summary: `The correlated event occurred outside the user-supplied ${context.occupiedStart} to ${context.occupiedEnd} operating window. The PDFs still do not identify which equipment was operating.`,
+        supportingEvidence: [
+          `Correlated event window: ${shortTimestamp(peakTimes[0])} to ${shortTimestamp(peakTimes[peakTimes.length - 1])}.`,
+          `User-supplied expected operating hours: ${context.occupiedStart} to ${context.occupiedEnd}.`,
+        ],
+        conflictingEvidence: [
+          'The operating window is user-supplied and has not been verified against the building schedule.',
+          'No device hierarchy or event log identifies the operating equipment.',
+        ],
+        confirmationCheck: 'Confirm the schedule in the building system and match the event to a named device or process.',
+      },
+      ...hypotheses.map((hypothesis, index) => ({
+        ...hypothesis,
+        rank: index + 2,
+      })),
+    ];
+  }
+
+  const requests = makeReportRequests(alignedReports, hasMatchedBaseline, context);
   const excludedReports = reports.filter(
     report => !alignedReports.includes(report) && !comparisonReports.includes(report),
   );
+  const impact = makeImpactAssessment({
+    absoluteEnergy,
+    comparisonReports,
+    context,
+  });
+  const category = outsideSchedule
+    ? {
+        id: 'off-hours-peak-event',
+        label: 'Off-hours peak-demand event',
+        rationale: 'The corroborated peak occurred outside the expected operating window supplied by the user.',
+      }
+    : fullCorrelation
+      ? {
+          id: 'peak-demand-event',
+          label: 'Peak-demand event',
+          rationale: 'Three aligned reports show a concentrated electrical event within a 45-minute correlation window.',
+        }
+      : duplicateSeries
+        ? {
+            id: 'interval-and-data-quality',
+            label: 'Interval anomaly with a data-quality concern',
+            rationale: 'The report contains an interval anomaly and a duplicated series that requires configuration review.',
+          }
+        : {
+            id: 'preliminary-interval-anomaly',
+            label: 'Preliminary interval anomaly',
+            rationale: 'The current report set is not sufficient to classify a root-cause pattern.',
+          };
+  const verificationPlan = makeVerificationPlan({
+    hasMatchedBaseline,
+    hasSchedule,
+    impactReady: impact.status === 'estimated',
+  });
+  const capabilityRoadmap = makeCapabilityRoadmap({
+    absoluteEnergy,
+    alignedReports,
+    comparisonReports,
+    context,
+  });
 
   return {
     status: fullCorrelation ? 'correlated' : 'needs-evidence',
-    title: fullCorrelation
-      ? 'A short-duration electrical event is the best-supported pattern.'
-      : 'More evidence is needed before a root-cause pattern can be supported.',
-    summary: fullCorrelation
-      ? `The event is corroborated for ${deviceName} across Absolute Energy, Power Peak, and Load Variance. Operational evidence is still required to identify the exact cause.`
-      : `${alignedReports.length} aligned report${alignedReports.length === 1 ? '' : 's'} were found for ${deviceName}. The app will not promote a single-report anomaly into a root-cause claim.`,
+    title: outsideSchedule
+      ? 'The electrical event occurred outside the expected operating window.'
+      : fullCorrelation
+        ? 'A short-duration electrical event is the best-supported pattern.'
+        : 'More evidence is needed before a root-cause pattern can be supported.',
+    summary: outsideSchedule
+      ? `The event is corroborated for ${deviceName} and falls outside the user-supplied ${context.occupiedStart} to ${context.occupiedEnd} operating hours. The exact equipment or trigger remains unknown.`
+      : fullCorrelation
+        ? `The event is corroborated for ${deviceName} across Absolute Energy, Power Peak, and Load Variance. Operational evidence is still required to identify the exact cause.`
+        : `${alignedReports.length} aligned report${alignedReports.length === 1 ? '' : 's'} were found for ${deviceName}. The app will not promote a single-report anomaly into a root-cause claim.`,
     confidence: {
       level: fullCorrelation ? 'Medium-high' : 'Low',
       rationale: fullCorrelation
         ? 'The electrical pattern is corroborated across three reports, while the operational trigger remains unknown.'
         : 'The current evidence set cannot independently confirm the anomaly type and its cause.',
+    },
+    category,
+    impact,
+    operationalContext: {
+      occupiedStart: context.occupiedStart ?? null,
+      occupiedEnd: context.occupiedEnd ?? null,
+      energyRatePerKwh: context.energyRatePerKwh ?? null,
+      currency: context.currency ?? null,
     },
     deviceName,
     timeRange,
@@ -668,6 +933,8 @@ export const analyzeReportSet = reports => {
     ],
     hypotheses,
     requests,
+    verificationPlan,
+    capabilityRoadmap,
     unknowns: [
       'The exact equipment or process that caused the event is not identified.',
       ...(!hasMatchedBaseline

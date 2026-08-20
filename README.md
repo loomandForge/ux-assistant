@@ -45,6 +45,14 @@ It inspects at most 12 pages per report and states when a larger report was only
 Scenario 001 measurements remain synthetic fixture data for interface evaluation, not an electrical
 diagnosis or evidence of model performance.
 
+The investigation can also accept user-supplied operating hours, an energy tariff, and a matched
+Absolute Energy report. Operating hours can classify a corroborated event as off-hours while keeping
+the exact equipment unknown. Tariff-based cost is calculated only when the comparison report has the
+same interval count; the result states that demand charges, taxes, weather, production, and occupancy
+changes remain outside the estimate. A verification plan and evidence-gated capability roadmap show
+when off-hours analysis, impact estimation, contributor attribution, efficiency tracking, and future
+control concepts become credible.
+
 ## Visual Architecture
 
 ```mermaid

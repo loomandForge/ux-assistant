@@ -359,11 +359,107 @@ main {
 }
 
 .report-evidence,
+.decision-section,
 .hypothesis-section,
 .recommendation-section,
-.report-trust {
+.report-trust,
+.capability-roadmap {
   padding: 88px 0;
   border-top: 1px solid var(--line);
+}
+
+.decision-section {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.52fr) minmax(0, 1.48fr);
+  gap: clamp(48px, 8vw, 104px);
+}
+
+.decision-content {
+  display: grid;
+  gap: 18px;
+}
+
+.decision-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.decision-grid article,
+.verification-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: clamp(22px, 4vw, 30px);
+  background: var(--surface);
+}
+
+.decision-grid span,
+.verification-plan span,
+.capability-roadmap-list > article > div > span {
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.decision-grid h3,
+.decision-grid p,
+.verification-panel h3,
+.verification-plan h4,
+.verification-plan p {
+  margin: 0;
+}
+
+.decision-grid h3 {
+  margin-top: 12px;
+  font-size: 1.2rem;
+}
+
+.decision-grid p {
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+.decision-grid ul {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.decision-grid .impact-caveat {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 0.78rem;
+}
+
+.verification-plan {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 26px;
+  margin-top: 20px;
+}
+
+.verification-plan article {
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+}
+
+.verification-plan h4 {
+  margin-top: 7px;
+}
+
+.verification-plan p {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.verification-plan .success-criterion {
+  color: var(--ink);
 }
 
 .recommendation-section {
@@ -432,6 +528,68 @@ main {
   margin-top: 28px;
   padding-top: 28px;
   border-top: 1px solid var(--line);
+}
+
+.operational-context-form {
+  display: grid;
+  gap: 18px;
+  margin-top: 28px;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.context-form-intro h3,
+.context-form-intro p {
+  margin: 0;
+}
+
+.context-form-intro p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.context-fields {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.context-fields label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.context-fields input {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--surface-strong);
+  color: var(--ink);
+  font: inherit;
+}
+
+.context-fields input::placeholder {
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.operational-context-form .secondary-action {
+  justify-self: start;
+}
+
+.context-status {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.74rem;
 }
 
 .additional-report-form span {
@@ -547,6 +705,86 @@ main {
 
 .report-trust li + li {
   margin-top: 12px;
+}
+
+.capability-roadmap {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.52fr) minmax(0, 1.48fr);
+  gap: clamp(48px, 8vw, 104px);
+}
+
+.capability-roadmap-list {
+  display: grid;
+  gap: 14px;
+}
+
+.capability-roadmap-list article {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  background: var(--surface);
+}
+
+.capability-roadmap-list header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+}
+
+.capability-roadmap-list h3,
+.capability-roadmap-list p {
+  margin: 0;
+}
+
+.capability-roadmap-list header strong {
+  border-radius: 6px;
+  padding: 5px 8px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.capability-roadmap-list header strong[data-status="ready-now"] {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.capability-roadmap-list article > p {
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+.capability-roadmap-list .roadmap-outcome {
+  color: var(--ink);
+}
+
+.capability-roadmap-list article > div {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 14px;
+  margin-top: 17px;
+  padding-top: 17px;
+  border-top: 1px solid var(--line);
+}
+
+.capability-roadmap-list ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.capability-roadmap-list li {
+  border-radius: 6px;
+  padding: 5px 8px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 0.74rem;
 }
 
 .sample-disclosure {
@@ -1087,10 +1325,16 @@ footer a:hover {
   .reasoning-section,
   .investigation-panel,
   .result-signal-layout,
+  .decision-section,
   .hypothesis-section,
   .recommendation-section,
-  .report-trust {
+  .report-trust,
+  .capability-roadmap {
     grid-template-columns: 1fr;
+  }
+
+  .context-fields {
+    grid-template-columns: 1fr 1fr;
   }
 
   .experience-hero {
@@ -1191,9 +1435,11 @@ footer a:hover {
 
   .result-signal-layout,
   .report-evidence,
+  .decision-section,
   .hypothesis-section,
   .recommendation-section,
-  .report-trust {
+  .report-trust,
+  .capability-roadmap {
     padding: 64px 0;
   }
 
@@ -1224,7 +1470,10 @@ footer a:hover {
   .critic-list,
   .hidden-details,
   .hypothesis-evidence,
-  .additional-report-form {
+  .additional-report-form,
+  .decision-grid,
+  .verification-plan,
+  .context-fields {
     grid-template-columns: 1fr;
   }
 
@@ -1234,8 +1483,14 @@ footer a:hover {
   }
 
   .additional-report-form .primary-action,
-  .additional-report-form .secondary-action {
+  .additional-report-form .secondary-action,
+  .operational-context-form .secondary-action {
     width: 100%;
+  }
+
+  .capability-roadmap-list header,
+  .capability-roadmap-list article > div {
+    grid-template-columns: 1fr;
   }
 
   .boundary-grid > div + div {

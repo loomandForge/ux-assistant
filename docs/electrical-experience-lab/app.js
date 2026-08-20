@@ -5,6 +5,7 @@ const byId = id => document.getElementById(id);
 let selectedReports = [];
 let selectedAdditionalReports = [];
 let analyzedReports = [];
+let operationalContext = {};
 
 const formatCapability = capability => capability.replaceAll('_', ' ');
 
@@ -173,6 +174,56 @@ const renderHypotheses = hypotheses => {
   }
 };
 
+const renderVerificationPlan = plan => {
+  const list = byId('verification-plan');
+  list.replaceChildren();
+
+  for (const item of plan) {
+    const article = document.createElement('article');
+    const when = document.createElement('span');
+    const title = document.createElement('h4');
+    const evidence = document.createElement('p');
+    const success = document.createElement('p');
+    when.textContent = item.when;
+    title.textContent = item.title;
+    evidence.textContent = item.evidence;
+    success.className = 'success-criterion';
+    success.textContent = `Success: ${item.success}`;
+    article.append(when, title, evidence, success);
+    list.append(article);
+  }
+};
+
+const renderCapabilityRoadmap = capabilities => {
+  const list = byId('capability-roadmap-list');
+  list.replaceChildren();
+
+  for (const capability of capabilities) {
+    const article = document.createElement('article');
+    const header = document.createElement('header');
+    const title = document.createElement('h3');
+    const status = document.createElement('strong');
+    const when = document.createElement('p');
+    const outcome = document.createElement('p');
+    const requirements = document.createElement('div');
+    const requirementsLabel = document.createElement('span');
+    const requirementsList = document.createElement('ul');
+
+    title.textContent = capability.title;
+    status.textContent = capability.status;
+    status.dataset.status = capability.status.toLowerCase().replaceAll(' ', '-');
+    when.textContent = capability.when;
+    outcome.textContent = capability.outcome;
+    outcome.className = 'roadmap-outcome';
+    requirementsLabel.textContent = 'Requires';
+    addListItems(requirementsList, capability.requires);
+    requirements.append(requirementsLabel, requirementsList);
+    header.append(title, status);
+    article.append(header, when, outcome, requirements);
+    list.append(article);
+  }
+};
+
 const renderReportAnalysis = (investigation, reports) => {
   byId('result-report-type').textContent = investigation.status === 'correlated'
     ? 'Correlated root-cause investigation'
@@ -197,7 +248,19 @@ const renderReportAnalysis = (investigation, reports) => {
     ? `${pagesProcessed} of ${totalPages} total pages were inspected. ${truncatedCount} report${truncatedCount === 1 ? ' was' : 's were'} truncated at the 12-page safety limit.`
     : `All ${totalPages} pages across the uploaded report set were inspected.`;
 
+  byId('investigation-category').textContent = investigation.category.label;
+  byId('investigation-category-rationale').textContent = investigation.category.rationale;
+  byId('impact-value').textContent = investigation.impact.value;
+  byId('impact-summary').textContent = investigation.impact.summary;
+  addListItems(byId('impact-evidence'), investigation.impact.evidence);
+  byId('impact-evidence').hidden = !investigation.impact.evidence.length;
+  addListItems(byId('impact-missing'), investigation.impact.missingInputs);
+  byId('impact-missing').hidden = !investigation.impact.missingInputs.length;
+  byId('impact-caveat').textContent = investigation.impact.caveat;
+
   renderHypotheses(investigation.hypotheses);
+  renderVerificationPlan(investigation.verificationPlan);
+  renderCapabilityRoadmap(investigation.capabilityRoadmap);
   renderReportEvidence(investigation.evidence.map(item => ({
     label: item.label,
     value: `${item.value} Source: ${item.sourceFile}`,
@@ -212,6 +275,18 @@ const renderReportAnalysis = (investigation, reports) => {
     ? 'The electrical pattern is supported. Add operational evidence to identify the exact equipment or trigger.'
     : 'Add the requested reports for the same device and period. The analysis will rerun automatically after upload.';
   addListItems(byId('report-unknowns'), investigation.unknowns);
+
+  const contextParts = [
+    investigation.operationalContext.occupiedStart && investigation.operationalContext.occupiedEnd
+      ? `Operating hours ${investigation.operationalContext.occupiedStart} to ${investigation.operationalContext.occupiedEnd}`
+      : null,
+    investigation.operationalContext.energyRatePerKwh && investigation.operationalContext.currency
+      ? `${investigation.operationalContext.currency.toUpperCase()} ${investigation.operationalContext.energyRatePerKwh} per kWh`
+      : null,
+  ].filter(Boolean);
+  byId('context-status').textContent = contextParts.length
+    ? contextParts.join('. ')
+    : 'No operational context applied';
 
   byId('import-workspace').hidden = true;
   byId('report-processing').hidden = true;
@@ -228,10 +303,13 @@ const resetReportFlow = () => {
   selectedReports = [];
   selectedAdditionalReports = [];
   analyzedReports = [];
+  operationalContext = {};
   byId('report-form').reset();
   byId('additional-report-form').reset();
+  byId('operational-context-form').reset();
   byId('selected-file').textContent = 'No reports selected';
   byId('additional-file-status').textContent = 'No additional reports selected';
+  byId('context-status').textContent = 'No operational context applied';
   byId('file-prompt').textContent = 'Choose reports';
   byId('analyze-report').disabled = true;
   byId('add-reports').disabled = true;
@@ -363,7 +441,10 @@ const analyzeFiles = async (files, append) => {
       report,
     ]),
   ).values()];
-  renderReportAnalysis(analyzeReportSet(analyzedReports), analyzedReports);
+  renderReportAnalysis(
+    analyzeReportSet(analyzedReports, operationalContext),
+    analyzedReports,
+  );
 };
 
 byId('report-form').addEventListener('submit', async event => {
@@ -403,6 +484,40 @@ byId('additional-report-form').addEventListener('submit', async event => {
   } finally {
     byId('add-reports').disabled = !selectedAdditionalReports.length;
   }
+});
+
+byId('operational-context-form').addEventListener('submit', event => {
+  event.preventDefault();
+  if (!analyzedReports.length) return;
+
+  const formData = new FormData(event.currentTarget);
+  const occupiedStart = String(formData.get('occupiedStart') ?? '');
+  const occupiedEnd = String(formData.get('occupiedEnd') ?? '');
+  const currency = String(formData.get('currency') ?? '').trim().toUpperCase();
+  const rateInput = String(formData.get('energyRatePerKwh') ?? '');
+  const rateValue = Number(rateInput);
+
+  if (Boolean(occupiedStart) !== Boolean(occupiedEnd)) {
+    byId('context-status').textContent = 'Enter both operating start and operating end.';
+    return;
+  }
+
+  if (Boolean(currency) !== Boolean(rateInput)) {
+    byId('context-status').textContent = 'Enter both currency and energy cost per kWh.';
+    return;
+  }
+
+  operationalContext = {
+    occupiedStart,
+    occupiedEnd,
+    currency,
+    energyRatePerKwh: Number.isFinite(rateValue) && rateValue > 0 ? rateValue : null,
+  };
+
+  renderReportAnalysis(
+    analyzeReportSet(analyzedReports, operationalContext),
+    analyzedReports,
+  );
 });
 
 byId('replace-report').addEventListener('click', resetReportFlow);

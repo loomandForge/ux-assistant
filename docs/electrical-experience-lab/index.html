@@ -122,6 +122,34 @@
           </div>
         </div>
 
+        <section class="decision-section" aria-labelledby="decision-heading">
+          <div class="section-intro">
+            <h2 id="decision-heading">From finding to decision</h2>
+            <p>The app separates the electrical pattern, potential impact, and the evidence needed before anyone changes operations.</p>
+          </div>
+          <div class="decision-content">
+            <div class="decision-grid">
+              <article>
+                <span>Investigation category</span>
+                <h3 id="investigation-category"></h3>
+                <p id="investigation-category-rationale"></p>
+              </article>
+              <article>
+                <span>Impact readiness</span>
+                <h3 id="impact-value"></h3>
+                <p id="impact-summary"></p>
+                <ul id="impact-evidence"></ul>
+                <ul id="impact-missing"></ul>
+                <p id="impact-caveat" class="impact-caveat"></p>
+              </article>
+            </div>
+            <div class="verification-panel">
+              <h3>Verification plan</h3>
+              <div id="verification-plan" class="verification-plan"></div>
+            </div>
+          </div>
+        </section>
+
         <section class="hypothesis-section" aria-labelledby="hypothesis-heading">
           <div class="section-intro">
             <h2 id="hypothesis-heading">Ranked causal hypotheses</h2>
@@ -145,6 +173,32 @@
           </div>
           <div>
             <div id="recommendation-list" class="recommendation-list"></div>
+            <form id="operational-context-form" class="operational-context-form">
+              <div class="context-form-intro">
+                <h3>Add operational context</h3>
+                <p>These values stay in this browser and are treated as user-supplied context, not report evidence.</p>
+              </div>
+              <div class="context-fields">
+                <label>
+                  <span>Operating start</span>
+                  <input id="occupied-start" name="occupiedStart" type="time" />
+                </label>
+                <label>
+                  <span>Operating end</span>
+                  <input id="occupied-end" name="occupiedEnd" type="time" />
+                </label>
+                <label>
+                  <span>Currency</span>
+                  <input id="tariff-currency" name="currency" type="text" maxlength="3" placeholder="USD" autocomplete="off" />
+                </label>
+                <label>
+                  <span>Energy cost per kWh</span>
+                  <input id="energy-rate" name="energyRatePerKwh" type="number" min="0.0001" step="0.0001" inputmode="decimal" placeholder="0.00" />
+                </label>
+              </div>
+              <button class="secondary-action" type="submit">Apply operational context</button>
+              <p id="context-status" class="context-status" aria-live="polite">No operational context applied</p>
+            </form>
             <form id="additional-report-form" class="additional-report-form">
               <label class="secondary-action" for="additional-report-files">Choose additional PDFs</label>
               <input id="additional-report-files" name="additional-reports" type="file" accept="application/pdf,.pdf" multiple />
@@ -172,6 +226,14 @@
               <p id="page-boundary"></p>
             </div>
           </aside>
+        </section>
+
+        <section class="capability-roadmap" aria-labelledby="capability-roadmap-heading">
+          <div class="section-intro">
+            <h2 id="capability-roadmap-heading">What becomes useful next</h2>
+            <p>Each capability is introduced only when its required data can support a defensible result.</p>
+          </div>
+          <div id="capability-roadmap-list" class="capability-roadmap-list"></div>
         </section>
       </section>
 
