@@ -338,12 +338,11 @@ main {
 }
 
 .result-header {
-  min-height: calc(78dvh - 72px);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 48px;
-  padding: 48px 0 72px;
+  padding: 48px 0 56px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -353,6 +352,61 @@ main {
 
 .result-header .summary {
   max-width: 64ch;
+}
+
+.decision-brief {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.58fr) minmax(0, 1.42fr);
+  gap: clamp(36px, 7vw, 88px);
+  margin-top: 32px;
+  padding: clamp(28px, 5vw, 48px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+
+.decision-brief h2 {
+  max-width: 16ch;
+  margin: 10px 0 0;
+  font-size: clamp(1.7rem, 3.2vw, 2.75rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.decision-brief-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px 30px;
+  margin: 0;
+}
+
+.decision-brief-grid div {
+  padding-top: 13px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.decision-brief-grid dt {
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.decision-brief-grid dd {
+  margin: 7px 0 0;
+  font-weight: 650;
+  line-height: 1.38;
+}
+
+.decision-readiness {
+  grid-column: 2;
+  margin: 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-strong);
+  color: var(--accent-strong);
+  font-weight: 750;
 }
 
 .result-signal-layout {
@@ -1341,6 +1395,7 @@ footer a:hover {
   .reasoning-section,
   .investigation-panel,
   .result-signal-layout,
+  .decision-brief,
   .decision-section,
   .hypothesis-section,
   .recommendation-section,
@@ -1488,9 +1543,14 @@ footer a:hover {
   .hypothesis-evidence,
   .additional-report-form,
   .decision-grid,
+  .decision-brief-grid,
   .verification-plan,
   .context-fields {
     grid-template-columns: 1fr;
+  }
+
+  .decision-readiness {
+    grid-column: 1;
   }
 
   .recommendation-list p,

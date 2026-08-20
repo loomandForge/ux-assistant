@@ -151,19 +151,19 @@ const renderHypotheses = hypotheses => {
     const check = document.createElement('p');
 
     rank.className = 'hypothesis-rank';
-    rank.textContent = `Hypothesis ${hypothesis.rank}`;
+    rank.textContent = `Possibility ${hypothesis.rank}`;
     title.textContent = hypothesis.title;
     status.textContent = hypothesis.status;
     status.dataset.status = hypothesis.status.toLowerCase().replaceAll(' ', '-');
     summary.textContent = hypothesis.summary;
-    supportingTitle.textContent = 'Supporting evidence';
-    conflictingTitle.textContent = 'Counter-evidence or gap';
+    supportingTitle.textContent = 'What supports this';
+    conflictingTitle.textContent = 'What is still missing';
     addListItems(supportingList, hypothesis.supportingEvidence.length
       ? hypothesis.supportingEvidence
-      : ['No direct supporting evidence in the current report set.']);
+      : ['The current reports do not directly support this yet.']);
     addListItems(conflictingList, hypothesis.conflictingEvidence);
     check.className = 'confirmation-check';
-    check.textContent = `Confirmation check: ${hypothesis.confirmationCheck}`;
+    check.textContent = `How to check: ${hypothesis.confirmationCheck}`;
 
     header.append(rank, title, status);
     supporting.append(supportingTitle, supportingList);
@@ -227,24 +227,40 @@ const renderCapabilityRoadmap = capabilities => {
 
 const renderReportAnalysis = (investigation, reports) => {
   byId('result-report-type').textContent = investigation.status === 'optimization-review'
-    ? 'Cross-tool optimization review'
+    ? 'Energy report review'
     : investigation.status === 'correlated'
-      ? 'Correlated root-cause investigation'
-      : 'Preliminary root-cause investigation';
+      ? 'Supported event investigation'
+      : 'Early report investigation';
   byId('report-result-heading').textContent = investigation.title;
   byId('result-summary').textContent = investigation.summary;
   byId('result-primary-value').textContent = investigation.confidence.level;
   byId('result-primary-label').textContent = investigation.status === 'optimization-review'
-    ? 'Evidence confidence'
-    : 'Pattern confidence';
-  byId('result-device').textContent = investigation.deviceName;
+    ? 'Decision readiness'
+    : 'Evidence confidence';
+  byId('result-device').textContent = investigation.decisionBrief?.assetScope ?? investigation.deviceName;
   byId('result-measurement').textContent = investigation.eventWindow;
   byId('result-time-range').textContent = investigation.timeRange;
   byId('result-source').textContent = `${investigation.alignedReportCount} of ${investigation.reportCount} uploaded reports`;
+  const isOptimizationReview = investigation.status === 'optimization-review';
+  byId('result-device-label').textContent = isOptimizationReview ? 'Scope' : 'Device';
+  byId('result-measurement-label').textContent = isOptimizationReview ? 'Time-of-day detail' : 'Event time';
+  byId('result-time-range-label').textContent = 'Report period';
+  byId('result-source-label').textContent = 'Reports used';
   byId('interpretation-text').textContent =
     `${investigation.hypotheses[0].summary} ${investigation.confidence.rationale}`;
-  byId('extraction-label').textContent = `${investigation.alignedReportCount} aligned reports`;
+  byId('extraction-label').textContent = `${investigation.reportCount} report${investigation.reportCount === 1 ? '' : 's'} read`;
   byId('extraction-detail').textContent = investigation.reportTypes.join(', ') || 'No supported interval reports';
+
+  const decisionBrief = investigation.decisionBrief;
+  byId('decision-brief').hidden = !decisionBrief;
+  if (decisionBrief) {
+    byId('decision-brief-title').textContent = decisionBrief.title;
+    byId('decision-priority').textContent = decisionBrief.priority;
+    byId('decision-reason').textContent = decisionBrief.reason;
+    byId('decision-next-action').textContent = decisionBrief.nextAction;
+    byId('decision-owner').textContent = decisionBrief.owner;
+    byId('decision-readiness').textContent = decisionBrief.readiness;
+  }
 
   const totalPages = reports.reduce((sum, report) => sum + report.totalPages, 0);
   const pagesProcessed = reports.reduce((sum, report) => sum + report.pagesProcessed, 0);
@@ -277,7 +293,7 @@ const renderReportAnalysis = (investigation, reports) => {
     format: request.format,
   })));
   byId('request-summary').textContent = investigation.status === 'optimization-review'
-    ? 'Add evidence for the named priority assets. The app will preserve the source names and test each reported opportunity before treating it as a root cause.'
+    ? 'Start with the data-quality items, then add interval and operating information for the leading assets. The app will test the reported opportunities before treating them as causes or savings.'
     : investigation.status === 'correlated'
       ? 'The electrical pattern is supported. Add operational evidence to identify the exact equipment or trigger.'
       : 'Add the requested reports for the same device and period. The analysis will rerun automatically after upload.';
@@ -293,7 +309,7 @@ const renderReportAnalysis = (investigation, reports) => {
   ].filter(Boolean);
   byId('context-status').textContent = contextParts.length
     ? contextParts.join('. ')
-    : 'No operational context applied';
+    : 'No site context added';
 
   byId('import-workspace').hidden = true;
   byId('report-processing').hidden = true;
@@ -316,7 +332,7 @@ const resetReportFlow = () => {
   byId('operational-context-form').reset();
   byId('selected-file').textContent = 'No reports selected';
   byId('additional-file-status').textContent = 'No additional reports selected';
-  byId('context-status').textContent = 'No operational context applied';
+  byId('context-status').textContent = 'No site context added';
   byId('file-prompt').textContent = 'Choose reports';
   byId('analyze-report').disabled = true;
   byId('add-reports').disabled = true;

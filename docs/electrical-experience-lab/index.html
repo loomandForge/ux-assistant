@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A read-only Electrical Experience Lab demo that interprets energy reports and builds evidence-backed root-cause investigations."
+      content="A read-only energy report review that explains what needs attention, what the evidence supports, and what to check next."
     />
-    <title>Root-cause investigation | Electrical Experience Lab</title>
+    <title>Energy report investigation | Electrical Experience Lab</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="vendor/jszip/jszip.min.js"></script>
     <script src="app.js" type="module"></script>
@@ -27,14 +27,14 @@
     <main>
       <section id="import-workspace" class="import-workspace" aria-labelledby="import-heading">
         <div class="import-copy">
-          <p class="context-label">Root-cause investigation</p>
-          <h1 id="import-heading">Turn energy reports into an investigation.</h1>
+          <p class="context-label">Energy report investigation</p>
+          <h1 id="import-heading">Understand what needs attention in your energy report.</h1>
           <p class="summary">
-            Upload a report from your energy-management tool. The app preserves its device names, checks data quality, and asks for the evidence needed before suggesting a cause.
+            Upload a report from your energy-management tool. The app checks the data, highlights the most useful findings, and explains what to investigate next.
           </p>
           <div class="import-boundary">
-            <strong>Evidence boundary</strong>
-            <p>The app preserves report names and asks for missing evidence instead of turning a single anomaly into a diagnosis.</p>
+            <strong>What the app will not do</strong>
+            <p>It will not present an estimate as a confirmed saving or recommend a setting change without supporting evidence.</p>
           </div>
         </div>
 
@@ -85,6 +85,32 @@
           <button id="replace-report" class="secondary-action" type="button">Start new investigation</button>
         </div>
 
+        <section id="decision-brief" class="decision-brief" aria-labelledby="decision-brief-title" hidden>
+          <div>
+            <p class="context-label">Manager brief</p>
+            <h2 id="decision-brief-title"></h2>
+          </div>
+          <dl class="decision-brief-grid">
+            <div>
+              <dt>Priority</dt>
+              <dd id="decision-priority"></dd>
+            </div>
+            <div>
+              <dt>Why this matters</dt>
+              <dd id="decision-reason"></dd>
+            </div>
+            <div>
+              <dt>First action</dt>
+              <dd id="decision-next-action"></dd>
+            </div>
+            <div>
+              <dt>Suggested owner</dt>
+              <dd id="decision-owner"></dd>
+            </div>
+          </dl>
+          <p id="decision-readiness" class="decision-readiness"></p>
+        </section>
+
         <div class="result-signal-layout">
           <aside class="signal-panel" aria-label="Primary extracted signal">
             <div class="headline-metric">
@@ -93,31 +119,31 @@
             </div>
             <dl>
               <div>
-                <dt>Device name</dt>
+                <dt id="result-device-label">Device</dt>
                 <dd id="result-device"></dd>
               </div>
               <div>
-                <dt>Event window</dt>
+                <dt id="result-measurement-label">Event time</dt>
                 <dd id="result-measurement"></dd>
               </div>
               <div>
-                <dt>Time range</dt>
+                <dt id="result-time-range-label">Report period</dt>
                 <dd id="result-time-range"></dd>
               </div>
               <div>
-                <dt>Aligned evidence</dt>
+                <dt id="result-source-label">Reports used</dt>
                 <dd id="result-source"></dd>
               </div>
             </dl>
           </aside>
 
           <div class="interpretation-panel">
-            <p class="context-label">Investigation finding</p>
-            <h2>Best-supported explanation</h2>
+            <p class="context-label">What the evidence says</p>
+            <h2>Current finding</h2>
             <p id="interpretation-text"></p>
             <div class="autonomy-row">
-              <span>Selected autonomy</span>
-              <strong>Investigate</strong>
+              <span>Current mode</span>
+              <strong>Review and investigate</strong>
             </div>
             <p class="fixture-note">Read-only analysis. No equipment setting or schedule is changed.</p>
           </div>
@@ -125,18 +151,18 @@
 
         <section class="decision-section" aria-labelledby="decision-heading">
           <div class="section-intro">
-            <h2 id="decision-heading">From finding to decision</h2>
-            <p>The app separates the electrical pattern, potential impact, and the evidence needed before anyone changes operations.</p>
+            <h2 id="decision-heading">What this means</h2>
+            <p>Use this section to understand the type of issue, the reported opportunity, and how to verify it.</p>
           </div>
           <div class="decision-content">
             <div class="decision-grid">
               <article>
-                <span>Investigation category</span>
+                <span>Type of review</span>
                 <h3 id="investigation-category"></h3>
                 <p id="investigation-category-rationale"></p>
               </article>
               <article>
-                <span>Impact readiness</span>
+                <span>Reported opportunity</span>
                 <h3 id="impact-value"></h3>
                 <p id="impact-summary"></p>
                 <ul id="impact-evidence"></ul>
@@ -145,7 +171,7 @@
               </article>
             </div>
             <div class="verification-panel">
-              <h3>Verification plan</h3>
+              <h3>How to verify it</h3>
               <div id="verification-plan" class="verification-plan"></div>
             </div>
           </div>
@@ -153,31 +179,31 @@
 
         <section class="hypothesis-section" aria-labelledby="hypothesis-heading">
           <div class="section-intro">
-            <h2 id="hypothesis-heading">Ranked causal hypotheses</h2>
-            <p>Each hypothesis includes supporting evidence, counter-evidence, and a check that can confirm or reject it.</p>
+            <h2 id="hypothesis-heading">What may be happening</h2>
+            <p>These are possibilities to check—not confirmed causes. Each one shows what supports it and what is still missing.</p>
           </div>
           <div id="hypothesis-list" class="hypothesis-list"></div>
         </section>
 
         <section class="report-evidence" aria-labelledby="report-evidence-heading">
           <div class="section-intro">
-            <h2 id="report-evidence-heading">Correlated report evidence</h2>
-            <p>Only reports with a matching device and time range contribute to the investigation.</p>
+            <h2 id="report-evidence-heading">Evidence used</h2>
+            <p>This is the information the app used to reach the current finding.</p>
           </div>
           <div id="report-evidence-grid" class="evidence-grid"></div>
         </section>
 
         <section class="recommendation-section" aria-labelledby="recommendation-heading">
           <div class="section-intro">
-            <h2 id="recommendation-heading">Evidence requested from you</h2>
-            <p id="request-summary">Add the missing reports or operational data to strengthen the root-cause analysis.</p>
+            <h2 id="recommendation-heading">What to add next</h2>
+            <p id="request-summary">Add the missing report or operational information to test the leading explanation.</p>
           </div>
           <div>
             <div id="recommendation-list" class="recommendation-list"></div>
             <form id="operational-context-form" class="operational-context-form">
               <div class="context-form-intro">
-                <h3>Add operational context</h3>
-                <p>These values stay in this browser and are treated as user-supplied context, not report evidence.</p>
+                <h3>Add what you know about the site</h3>
+                <p>Operating hours and tariffs help the app judge off-hours use and cost. They stay in this browser.</p>
               </div>
               <div class="context-fields">
                 <label>
@@ -197,8 +223,8 @@
                   <input id="energy-rate" name="energyRatePerKwh" type="number" min="0.0001" step="0.0001" inputmode="decimal" placeholder="0.00" />
                 </label>
               </div>
-              <button class="secondary-action" type="submit">Apply operational context</button>
-              <p id="context-status" class="context-status" aria-live="polite">No operational context applied</p>
+              <button class="secondary-action" type="submit">Use this site context</button>
+              <p id="context-status" class="context-status" aria-live="polite">No site context added</p>
             </form>
             <form id="additional-report-form" class="additional-report-form">
               <label class="secondary-action" for="additional-report-files">Choose additional reports</label>
@@ -211,7 +237,7 @@
 
         <section class="report-trust" aria-labelledby="report-trust-heading">
           <div>
-            <h2 id="report-trust-heading">Boundaries and unknowns</h2>
+            <h2 id="report-trust-heading">What we still do not know</h2>
             <ul id="report-unknowns"></ul>
           </div>
           <aside class="trust-panel">
@@ -223,7 +249,7 @@
               </div>
             </div>
             <div class="trust-copy">
-              <h3>Boundary</h3>
+              <h3>File coverage</h3>
               <p id="page-boundary"></p>
             </div>
           </aside>
@@ -231,8 +257,8 @@
 
         <section class="capability-roadmap" aria-labelledby="capability-roadmap-heading">
           <div class="section-intro">
-            <h2 id="capability-roadmap-heading">What becomes useful next</h2>
-            <p>Each capability is introduced only when its required data can support a defensible result.</p>
+            <h2 id="capability-roadmap-heading">What the app can help with next</h2>
+            <p>More advanced insights become useful only when the required data is available.</p>
           </div>
           <div id="capability-roadmap-list" class="capability-roadmap-list"></div>
         </section>

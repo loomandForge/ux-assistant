@@ -37,6 +37,9 @@ const formatRatio = value =>
     maximumFractionDigits: 1,
   }).format(value);
 
+const countPhrase = (count, singular, plural = `${singular}s`) =>
+  `${count} ${count === 1 ? singular : plural}`;
+
 const parseTimestamp = value => {
   const match = value.match(
     /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/,
@@ -725,6 +728,8 @@ const makeOptimizationInvestigation = (report, reports, context) => {
     rowCount,
     validRowCount,
     invalidRows,
+    duplicateNames = [],
+    conflictingAssessmentRows = [],
     topBasePotential,
     topPeakPotential,
     topWork,
@@ -732,6 +737,10 @@ const makeOptimizationInvestigation = (report, reports, context) => {
   const topBase = topBasePotential[0];
   const topPeak = topPeakPotential[0];
   const invalidNames = invalidRows.map(row => row.name);
+  const duplicateNameList = duplicateNames.map(item => item.name);
+  const hasDataQualityConcern = Boolean(
+    invalidRows.length || duplicateNames.length || conflictingAssessmentRows.length,
+  );
   const excludedReports = reports.filter(candidate => candidate !== report);
   const reportEvidence = report.evidence.map(item => ({
     ...item,
@@ -739,58 +748,72 @@ const makeOptimizationInvestigation = (report, reports, context) => {
   }));
 
   const hypotheses = [
-    ...(invalidRows.length
+    ...(hasDataQualityConcern
       ? [{
           id: 'counter-data-quality',
           rank: 1,
-          title: 'Counter overflow, reset, or scaling issue',
-          status: 'Strong data-quality signal',
-          summary: `${invalidRows.length} row${invalidRows.length === 1 ? '' : 's'} contain values far outside the rest of the workbook. They were excluded before ranking opportunities.`,
-          supportingEvidence: invalidRows.slice(0, 6).map(
-            row => `${row.name}: ${formatNumber(row.workKwh)} kWh and ${formatNumber(row.peakPowerKw)} kW.`,
-          ),
-          conflictingEvidence: [
-            'The workbook does not contain meter range, multiplier, reset, or rollover configuration.',
+          title: 'Some report data needs checking',
+          status: 'Check first',
+          summary: `${invalidRows.length} readings are far outside the rest of the report. The app left them out so they do not distort the opportunity ranking.`,
+          supportingEvidence: [
+            `${invalidRows.length} unusually large energy or power readings were excluded.`,
+            ...(duplicateNames.length
+              ? [`${duplicateNames.length} device names appear more than once without a unique asset ID.`]
+              : []),
+            ...(conflictingAssessmentRows.length
+              ? [`${conflictingAssessmentRows.length} rows are marked High priority while also described as non-critical or not needing detailed analysis.`]
+              : []),
           ],
-          confirmationCheck: `Inspect the source counter configuration and raw readings for ${invalidNames.join(', ')}.`,
+          conflictingEvidence: [
+            'The report does not include meter settings or raw readings, so the exact reason for the unusual values is not known.',
+          ],
+          confirmationCheck: invalidRows.length
+            ? `Ask the metering or data owner to verify ${invalidNames.join(', ')} and provide unique IDs for repeated device names.`
+            : 'Ask the data owner to confirm unique device IDs and explain how priority, problem, and suggestion fields are assigned.',
         }]
       : []),
     ...(topBase
       ? [{
           id: 'reported-base-load-opportunity',
-          rank: invalidRows.length ? 2 : 1,
-          title: `Reported base-load opportunity: ${topBase.name}`,
-          status: 'Reported opportunity',
-          summary: `The source report ranks ${topBase.name} highest for base potential at ${formatNumber(topBase.basePotentialKwh)} kWh. This is a prioritization lead, not a verified saving or root cause.`,
+          rank: hasDataQualityConcern ? 2 : 1,
+          title: `Check the base load for ${topBase.name}`,
+          status: 'Opportunity to verify',
+          summary: `The report shows ${formatNumber(topBase.basePotentialKwh)} kWh of possible base-load reduction for ${topBase.name}. This is an estimate to investigate, not a confirmed saving.`,
           supportingEvidence: [
             `Source-reported problem: ${topBase.problem ?? 'Not provided'}.`,
             `Source-reported suggestion: ${topBase.suggestion ?? 'Not provided'}.`,
             `Source-reported base potential: ${formatNumber(topBase.basePotentialKwh)} kWh.`,
           ],
           conflictingEvidence: [
-            'No interval profile or operating schedule is included to show when the base load occurred.',
-            'The asset hierarchy is unknown, so parent and child meters may overlap.',
+            ...(conflictingAssessmentRows.includes(topBase)
+              ? ['The same source row says the asset is non-critical and detailed analysis is not required, which conflicts with its High priority and large reported potential.']
+              : []),
+            'There is no interval profile or operating schedule to show when the base load occurred.',
+            'The meter hierarchy is unknown, so parent and child meters may overlap.',
           ],
-          confirmationCheck: `Compare ${topBase.name} interval consumption with expected operating hours and a matched baseline.`,
+          confirmationCheck: `Compare ${topBase.name} with its operating schedule and a similar baseline period before proposing a change.`,
         }]
       : []),
     ...(topPeak
       ? [{
           id: 'reported-peak-opportunity',
-          rank: (invalidRows.length ? 1 : 0) + (topBase ? 2 : 1),
-          title: `Reported peak opportunity: ${topPeak.name}`,
-          status: 'Reported opportunity',
-          summary: `The source report ranks ${topPeak.name} highest for peak potential at ${formatNumber(topPeak.peakPotentialKw)} kW. The peak time and operating trigger are not present in this workbook.`,
+          rank: (hasDataQualityConcern ? 1 : 0) + (topBase ? 2 : 1),
+          title: `Check whether ${topPeak.name} drives the site peak`,
+          status: 'Opportunity to verify',
+          summary: `The report shows ${formatNumber(topPeak.peakPotentialKw)} kW of possible peak reduction for ${topPeak.name}. It does not show when the peak occurred or what triggered it.`,
           supportingEvidence: [
             `Source-reported problem: ${topPeak.problem ?? 'Not provided'}.`,
             `Source-reported suggestion: ${topPeak.suggestion ?? 'Not provided'}.`,
             `Source-reported peak potential: ${formatNumber(topPeak.peakPotentialKw)} kW.`,
           ],
           conflictingEvidence: [
-            'No demand interval report identifies when the site peak occurred.',
+            ...(conflictingAssessmentRows.includes(topPeak)
+              ? ['The source row calls the asset non-critical and says detailed analysis is not required, despite its High priority and large reported peak potential.']
+              : []),
+            'There is no demand interval report showing when the site peak occurred.',
             'No equipment sequence or event log connects this asset to the site peak.',
           ],
-          confirmationCheck: `Compare ${topPeak.name} demand intervals with the site peak window and equipment sequence.`,
+          confirmationCheck: `Compare ${topPeak.name} demand intervals with the site peak and charging schedule.`,
         }]
       : []),
   ];
@@ -821,8 +844,28 @@ const makeOptimizationInvestigation = (report, reports, context) => {
           kind: 'operational-data',
           label: 'Meter or counter configuration',
           format: `Raw counter export and multiplier, range, reset, or rollover settings for ${invalidNames.join(', ')}`,
-          reason: 'Confirms whether the excluded values are overflow, reset, scaling, or valid readings.',
-          priority: 'Needed to resolve data quality',
+          reason: 'Explains whether the unusual values are caused by overflow, reset, scaling, or valid readings.',
+          priority: 'Do this first',
+        }]
+      : []),
+    ...(duplicateNames.length
+      ? [{
+          id: 'unique-asset-identifiers',
+          kind: 'operational-data',
+          label: 'Unique IDs for repeated device names',
+          format: `Asset register or meter map for ${duplicateNameList.slice(0, 8).join(', ')}${duplicateNameList.length > 8 ? ', and the other repeated names' : ''}`,
+          reason: 'Separates different devices that currently share a name and prevents the wrong asset from being investigated.',
+          priority: 'Do this first',
+        }]
+      : []),
+    ...(conflictingAssessmentRows.length
+      ? [{
+          id: 'assessment-rules',
+          kind: 'operational-data',
+          label: 'Priority and recommendation rules',
+          format: 'A short explanation of how Priority, Problem, Suggestion, and Potential are calculated',
+          reason: `${conflictingAssessmentRows.length} rows combine High priority with a non-critical or no-analysis-needed message. The ranking cannot be trusted until that conflict is understood.`,
+          priority: 'Do this first',
         }]
       : []),
     ...(topBase
@@ -832,7 +875,7 @@ const makeOptimizationInvestigation = (report, reports, context) => {
           label: `${topBase.name} interval energy report`,
           format: 'CSV, XLSX, or PDF with timestamped kWh for the same month',
           reason: 'Shows whether the reported base opportunity occurs off-hours or is required continuous load.',
-          priority: 'Needed to verify base-load cause',
+          priority: 'Next investigation',
         }]
       : []),
     ...(topPeak
@@ -842,7 +885,7 @@ const makeOptimizationInvestigation = (report, reports, context) => {
           label: `${topPeak.name} and site peak-demand report`,
           format: 'CSV, XLSX, or PDF with aligned timestamped kW intervals',
           reason: 'Shows whether the asset coincides with and materially contributes to the site peak.',
-          priority: 'Needed to verify peak cause',
+          priority: 'Next investigation',
         }]
       : []),
     {
@@ -851,7 +894,7 @@ const makeOptimizationInvestigation = (report, reports, context) => {
       label: 'Asset and meter hierarchy',
       format: 'Parent-child meter map or single-line diagram with the workbook asset names',
       reason: 'Prevents double counting and connects reported assets to systems and areas.',
-      priority: 'Needed for contribution analysis',
+      priority: 'Needed before totals',
     },
     {
       id: 'operating-schedule',
@@ -859,7 +902,7 @@ const makeOptimizationInvestigation = (report, reports, context) => {
       label: 'Expected operating schedule',
       format: 'Occupied hours and equipment schedules for the priority assets',
       reason: 'Separates required operation from avoidable off-hours or extended runtime.',
-      priority: 'Needed to confirm the cause',
+      priority: 'Needed before changes',
     },
   ];
 
@@ -871,31 +914,42 @@ const makeOptimizationInvestigation = (report, reports, context) => {
 
   return {
     status: 'optimization-review',
-    title: invalidRows.length
-      ? 'Optimization opportunities are ranked after excluding probable counter errors.'
-      : 'The source report contains optimization leads that are ready for validation.',
-    summary: `${validRowCount} of ${rowCount} asset rows were used for ranking. Device names are preserved from the workbook; its problems, suggestions, and potential values remain source-reported until supporting interval and operational evidence is added.`,
+    title: hasDataQualityConcern
+      ? 'Check the report data before acting on its savings estimates.'
+      : 'The report contains energy-saving opportunities worth checking.',
+    summary: `${rowCount} asset rows were reviewed and ${validRowCount} were used for ranking. The app found ${countPhrase(invalidRows.length, 'unusual reading')}, ${countPhrase(duplicateNames.length, 'repeated device name')}, and ${countPhrase(conflictingAssessmentRows.length, 'source assessment')} that may contradict their priority.`,
     confidence: {
-      level: 'Medium',
-      rationale: 'The workbook extraction and ranking are deterministic, while the proposed causes and savings have not been independently confirmed.',
+      level: 'Needs review',
+      rationale: 'The report was read successfully, but its data quality and internal labels need to be checked before anyone relies on the opportunity ranking.',
     },
     category: {
       id: 'portfolio-optimization-review',
-      label: 'Portfolio optimization and data-quality review',
-      rationale: 'The workbook ranks asset-level potential across a portfolio but does not contain the interval or operational evidence needed to prove each cause.',
+      label: 'Portfolio opportunity and data-quality review',
+      rationale: 'The report helps shortlist assets, but it does not include enough operational evidence to confirm why energy was used or how much can be saved.',
     },
     impact: {
       status: 'reported',
       label: 'Highest source-reported opportunity',
       value: topOpportunity,
       summary: topBase
-        ? `${topBase.name} has the highest reported base potential. Treat it as a lead to investigate, not an achieved or guaranteed saving.`
+        ? `${topBase.name} has the largest reported base-load opportunity. Validate the estimate before using it in a business case.`
         : 'No source-reported base-load potential was available for a quantified lead.',
       evidence: topBase
         ? [`Source-reported base potential: ${formatNumber(topBase.basePotentialKwh)} kWh.`]
         : [],
       missingInputs: ['Timestamped interval data', 'Expected operating schedule', 'Matched baseline', 'Asset hierarchy'],
-      caveat: 'Do not sum workbook work or potential values as a site total until the parent-child meter hierarchy is known.',
+      caveat: 'Do not add the workbook values into a site total until the parent-child meter hierarchy is known.',
+    },
+    decisionBrief: {
+      title: 'Validate the report before approving an energy project.',
+      priority: 'Review source data first',
+      reason: `${countPhrase(invalidRows.length, 'unusual reading')}, ${countPhrase(duplicateNames.length, 'repeated device name')}, and ${countPhrase(conflictingAssessmentRows.length, 'conflicting source assessment')} could change the ranking.`,
+      nextAction: invalidRows.length
+        ? `Verify the ${countPhrase(invalidRows.length, 'unusual meter reading')} and assign unique IDs to repeated device names.`
+        : 'Confirm unique asset IDs, priority rules, and the meter hierarchy.',
+      owner: 'Energy manager with the metering or data owner',
+      readiness: 'Ready to investigate; not ready to change settings or claim savings',
+      assetScope: `${rowCount} assets reviewed`,
     },
     operationalContext: {
       occupiedStart: context.occupiedStart ?? null,
@@ -909,45 +963,36 @@ const makeOptimizationInvestigation = (report, reports, context) => {
     alignedReportCount: 1,
     excludedReportCount: excludedReports.length,
     reportTypes: [report.reportType],
-    eventWindow: 'Not available in this summary report',
-    evidence: [
-      ...reportEvidence,
-      ...(topWork[0]
-        ? [{
-            label: 'Highest valid work value',
-            value: `${topWork[0].name}: ${formatNumber(topWork[0].workKwh)} kWh`,
-            sourceFile: report.sourceFile,
-          }]
-        : []),
-    ],
+    eventWindow: 'No time-of-day data in this report',
+    evidence: reportEvidence,
     hypotheses,
     requests,
     verificationPlan: [
       {
-        title: 'Resolve source-data exceptions',
-        when: 'Before comparing or summing assets',
+        title: 'Check unusual values and repeated names',
+        when: 'First',
         evidence: invalidRows.length
-          ? `Validate raw readings and counter settings for ${invalidNames.join(', ')}.`
-          : 'Confirm that source readings and multipliers are valid.',
-        success: 'The reviewer accepts or corrects every excluded value and documents the reason.',
+          ? `Validate raw readings and counter settings for ${invalidNames.join(', ')}. Add unique IDs for repeated device names.`
+          : 'Confirm that source readings, multipliers, and device IDs are valid.',
+        success: 'Each unusual value and repeated name is accepted or corrected, with a documented reason.',
       },
       {
-        title: 'Confirm the meter hierarchy',
-        when: 'Before calculating site contribution',
-        evidence: 'Map parent meters, child meters, systems, and areas using the workbook device names.',
-        success: 'Contributor totals exclude overlapping parent-child energy.',
+        title: 'Confirm which meters can be added together',
+        when: 'Before calculating totals',
+        evidence: 'Map parent meters, child meters, systems, and areas using the report device names.',
+        success: 'Totals do not count the same energy through both a parent and child meter.',
       },
       {
-        title: 'Verify the leading cause',
-        when: 'Before recommending an operational change',
-        evidence: 'Add aligned interval data, expected schedules, and event or control logs for the leading asset.',
-        success: 'A named operating condition explains the pattern without conflicting evidence.',
+        title: 'Test the leading opportunity',
+        when: 'Before recommending a change',
+        evidence: 'Add interval data, expected schedules, and event or control logs for the leading asset.',
+        success: 'A specific operating condition explains the pattern without contradictory evidence.',
       },
       {
-        title: 'Measure the result',
-        when: 'After a human-approved change',
-        evidence: 'Compare a matched post-change period with the locked baseline and record operational side effects.',
-        success: 'The targeted energy or demand pattern improves without a safety, comfort, or production issue.',
+        title: 'Measure what changed',
+        when: 'After an approved change',
+        evidence: 'Compare a similar post-change period with the agreed baseline and record operational side effects.',
+        success: 'Energy or demand improves without creating a safety, comfort, or production problem.',
       },
     ],
     capabilityRoadmap: [

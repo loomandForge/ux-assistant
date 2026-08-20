@@ -47,6 +47,9 @@ unverified leads. Probable counter-overflow values are excluded from rankings, a
 interval data, operating schedules, and the meter hierarchy before claiming a cause or saving. It
 does not depend on a particular vendor name. For PDFs, it inspects at most 12 pages per report and
 states when a larger report was only partially read.
+The optimization review opens with a manager brief that states the priority, reason, first action,
+suggested owner, and decision readiness. It also flags repeated device names without unique IDs and
+source assessments whose priority conflicts with their problem or recommendation labels.
 Scenario 001 measurements remain synthetic fixture data for interface evaluation, not an electrical
 diagnosis or evidence of model performance.
 

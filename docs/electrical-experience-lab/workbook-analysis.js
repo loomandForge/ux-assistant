@@ -43,6 +43,21 @@ const countValues = (rows, key) => {
   return Object.fromEntries([...counts.entries()].sort((left, right) => right[1] - left[1]));
 };
 
+const findDuplicateNames = rows => {
+  const counts = new Map();
+  for (const row of rows) {
+    counts.set(row.name, (counts.get(row.name) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([name, count]) => ({ name, count }))
+    .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));
+};
+
+const hasConflictingSourceAssessment = row =>
+  row.priority?.toLowerCase() === 'high' &&
+  (/non-critical/i.test(row.problem ?? '') || /not required/i.test(row.suggestion ?? ''));
+
 const normalizeRow = row => ({
   name: String(row.Name ?? '').trim(),
   priority: String(row.Priority ?? '').trim() || null,
@@ -168,6 +183,8 @@ export const analyzeWorkbookRows = ({ rows, sourceFile, sheetName = 'Worksheet' 
 
   const invalidRows = records.filter(isProbableCounterOverflow);
   const validRows = records.filter(row => !isProbableCounterOverflow(row));
+  const duplicateNames = findDuplicateNames(records);
+  const conflictingAssessmentRows = records.filter(hasConflictingSourceAssessment);
   const topWork = sortDescending(validRows, 'workKwh').slice(0, 5);
   const topBasePotential = sortDescending(validRows, 'basePotentialKwh').slice(0, 5);
   const topPeakPotential = sortDescending(validRows, 'peakPotentialKw').slice(0, 5);
@@ -209,6 +226,8 @@ export const analyzeWorkbookRows = ({ rows, sourceFile, sheetName = 'Worksheet' 
       rowCount: records.length,
       validRowCount: validRows.length,
       invalidRows,
+      duplicateNames,
+      conflictingAssessmentRows,
       topWork,
       topBasePotential,
       topPeakPotential,
@@ -221,6 +240,8 @@ export const analyzeWorkbookRows = ({ rows, sourceFile, sheetName = 'Worksheet' 
       { label: 'Assets found', value: String(records.length) },
       { label: 'Rows used for ranking', value: String(validRows.length) },
       { label: 'Rows excluded', value: String(invalidRows.length) },
+      { label: 'Repeated device names', value: String(duplicateNames.length) },
+      { label: 'Conflicting source assessments', value: String(conflictingAssessmentRows.length) },
       ...(topWork[0]
         ? [{ label: 'Highest valid work value', value: `${topWork[0].name}: ${formatNumber(topWork[0].workKwh)} kWh` }]
         : []),
@@ -249,6 +270,12 @@ export const analyzeWorkbookRows = ({ rows, sourceFile, sheetName = 'Worksheet' 
       'The source application is not identified in the workbook.',
       'The asset hierarchy is not provided, so site totals may double-count parent and child meters.',
       'Source-reported problems, suggestions, and potential values have not been independently verified.',
+      ...(duplicateNames.length
+        ? [`${duplicateNames.length} device names appear more than once, but the workbook does not include unique asset IDs.`]
+        : []),
+      ...(conflictingAssessmentRows.length
+        ? [`${conflictingAssessmentRows.length} rows combine a High priority with a non-critical or no-analysis-needed assessment.`]
+        : []),
     ],
     extraction: {
       label: 'Native Excel table',
