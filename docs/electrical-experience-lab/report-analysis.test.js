@@ -152,6 +152,10 @@ test('asks for corroborating reports when only one report is available', () => {
   assert.ok(investigation.requests.some(request => request.label === 'Power Peak report'));
   assert.ok(investigation.requests.some(request => request.label === 'Load Variance report'));
   assert.match(investigation.summary, /will not promote a single-report anomaly/i);
+  assert.equal(investigation.decisionBrief.priority, 'Validate the report configuration first');
+  assert.match(investigation.decisionBrief.reason, /1 matching report was found/i);
+  assert.match(investigation.decisionBrief.nextAction, /Power Peak report/i);
+  assert.match(investigation.decisionBrief.readiness, /not ready to change settings/i);
 });
 
 test('correlates three aligned reports into a supported event pattern', () => {
@@ -185,8 +189,11 @@ test('correlates three aligned reports into a supported event pattern', () => {
 
   assert.equal(investigation.status, 'correlated');
   assert.equal(investigation.hypotheses[0].status, 'Supported pattern');
-  assert.match(investigation.title, /short-duration electrical event/i);
+  assert.match(investigation.title, /short electrical event/i);
   assert.match(investigation.eventWindow, /00:30.*01:00/i);
+  assert.equal(investigation.decisionBrief.priority, 'Investigate the event window');
+  assert.match(investigation.decisionBrief.reason, /three matching reports/i);
+  assert.match(investigation.decisionBrief.readiness, /pattern supported/i);
   assert.ok(investigation.requests.some(request => request.label === 'Expected operating hours'));
   assert.ok(investigation.requests.some(request => request.label === 'Alarm, event, or meter log'));
   assert.ok(!investigation.requests.some(request => request.label === 'Power Peak report'));
@@ -227,7 +234,9 @@ test('classifies a correlated event as off-hours after operating context is supp
 
   assert.equal(investigation.category.id, 'off-hours-peak-event');
   assert.equal(investigation.hypotheses[0].id, 'off-hours-operation');
-  assert.match(investigation.title, /outside the expected operating window/i);
+  assert.match(investigation.title, /outside the expected operating hours/i);
+  assert.equal(investigation.decisionBrief.priority, 'Investigate the off-hours event');
+  assert.match(investigation.decisionBrief.nextAction, /control history/i);
   assert.ok(!investigation.requests.some(request => request.label === 'Expected operating hours'));
   assert.equal(investigation.capabilityRoadmap[0].status, 'Ready now');
 });

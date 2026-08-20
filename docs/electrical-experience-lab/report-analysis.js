@@ -1044,6 +1044,56 @@ const makeOptimizationInvestigation = (report, reports, context) => {
   };
 };
 
+const makeIntervalDecisionBrief = ({
+  alignedReports,
+  deviceName,
+  duplicateSeries,
+  fullCorrelation,
+  outsideSchedule,
+  peakSpreadMinutes,
+  requests,
+}) => {
+  if (fullCorrelation) {
+    return {
+      title: outsideSchedule
+        ? 'Confirm what was running outside expected hours.'
+        : 'Confirm what caused the short electrical event.',
+      priority: outsideSchedule
+        ? 'Investigate the off-hours event'
+        : 'Investigate the event window',
+      reason: `Three matching reports show peaks within ${formatNumber(peakSpreadMinutes)} minutes. The electrical pattern is supported, but the equipment or operating trigger is still unknown.`,
+      nextAction: outsideSchedule
+        ? 'Match the event time to the equipment schedule, control history, and alarm log.'
+        : 'Match the event window to the equipment schedule and alarm or meter log.',
+      owner: 'Energy manager with the facility or controls owner',
+      readiness: 'Pattern supported; exact equipment and cause still need confirmation',
+      assetScope: deviceName,
+    };
+  }
+
+  const nextReport = requests.find(
+    request => request.kind === 'report' && request.priority === 'Needed for correlation',
+  );
+  const matchingReportText = `${alignedReports.length} matching report${alignedReports.length === 1 ? '' : 's'} ${alignedReports.length === 1 ? 'was' : 'were'} found`;
+  return {
+    title: duplicateSeries
+      ? 'Check the report setup and add matching evidence.'
+      : 'Add matching evidence before approving an action.',
+    priority: duplicateSeries
+      ? 'Validate the report configuration first'
+      : 'Confirm whether the event is real',
+    reason: duplicateSeries
+      ? `${matchingReportText}, and the energy report contains a repeated series that could affect totals.`
+      : `${matchingReportText}. One report can show a possible event, but it cannot confirm the pattern or its cause.`,
+    nextAction: nextReport
+      ? `Add the ${nextReport.label} for the same device and time period.`
+      : 'Add another matching interval report and compare the event time.',
+    owner: 'Energy manager or site engineer',
+    readiness: 'Ready to review; not ready to change settings or claim savings',
+    assetScope: deviceName,
+  };
+};
+
 export const analyzeReportSet = (reports, context = {}) => {
   if (!reports.length) throw new Error('Add at least one report to start an investigation.');
 
@@ -1217,14 +1267,23 @@ export const analyzeReportSet = (reports, context = {}) => {
     comparisonReports,
     context,
   });
+  const decisionBrief = makeIntervalDecisionBrief({
+    alignedReports,
+    deviceName,
+    duplicateSeries,
+    fullCorrelation,
+    outsideSchedule,
+    peakSpreadMinutes,
+    requests,
+  });
 
   return {
     status: fullCorrelation ? 'correlated' : 'needs-evidence',
     title: outsideSchedule
-      ? 'The electrical event occurred outside the expected operating window.'
+      ? 'The event happened outside the expected operating hours.'
       : fullCorrelation
-        ? 'A short-duration electrical event is the best-supported pattern.'
-        : 'More evidence is needed before a root-cause pattern can be supported.',
+        ? 'Three reports point to a short electrical event.'
+        : 'This report shows a possible electrical event, but more evidence is needed.',
     summary: outsideSchedule
       ? `The event is corroborated for ${deviceName} and falls outside the user-supplied ${context.occupiedStart} to ${context.occupiedEnd} operating hours. The exact equipment or trigger remains unknown.`
       : fullCorrelation
@@ -1238,6 +1297,7 @@ export const analyzeReportSet = (reports, context = {}) => {
     },
     category,
     impact,
+    decisionBrief,
     operationalContext: {
       occupiedStart: context.occupiedStart ?? null,
       occupiedEnd: context.occupiedEnd ?? null,

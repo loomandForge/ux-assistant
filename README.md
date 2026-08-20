@@ -50,6 +50,8 @@ states when a larger report was only partially read.
 The optimization review opens with a manager brief that states the priority, reason, first action,
 suggested owner, and decision readiness. It also flags repeated device names without unique IDs and
 source assessments whose priority conflicts with their problem or recommendation labels.
+Preliminary and correlated PDF investigations use the same brief, with the next action and readiness
+adapted to the available report evidence.
 Scenario 001 measurements remain synthetic fixture data for interface evaluation, not an electrical
 diagnosis or evidence of model performance.
 
