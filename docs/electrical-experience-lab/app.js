@@ -1,4 +1,5 @@
 import { analyzePdfReport, analyzeReportSet } from './report-analysis.js';
+import { analyzeWorkbookReport } from './workbook-analysis.js';
 
 const byId = id => document.getElementById(id);
 
@@ -225,13 +226,17 @@ const renderCapabilityRoadmap = capabilities => {
 };
 
 const renderReportAnalysis = (investigation, reports) => {
-  byId('result-report-type').textContent = investigation.status === 'correlated'
-    ? 'Correlated root-cause investigation'
-    : 'Preliminary root-cause investigation';
+  byId('result-report-type').textContent = investigation.status === 'optimization-review'
+    ? 'Cross-tool optimization review'
+    : investigation.status === 'correlated'
+      ? 'Correlated root-cause investigation'
+      : 'Preliminary root-cause investigation';
   byId('report-result-heading').textContent = investigation.title;
   byId('result-summary').textContent = investigation.summary;
   byId('result-primary-value').textContent = investigation.confidence.level;
-  byId('result-primary-label').textContent = 'Pattern confidence';
+  byId('result-primary-label').textContent = investigation.status === 'optimization-review'
+    ? 'Evidence confidence'
+    : 'Pattern confidence';
   byId('result-device').textContent = investigation.deviceName;
   byId('result-measurement').textContent = investigation.eventWindow;
   byId('result-time-range').textContent = investigation.timeRange;
@@ -271,9 +276,11 @@ const renderReportAnalysis = (investigation, reports) => {
     priority: request.priority,
     format: request.format,
   })));
-  byId('request-summary').textContent = investigation.status === 'correlated'
-    ? 'The electrical pattern is supported. Add operational evidence to identify the exact equipment or trigger.'
-    : 'Add the requested reports for the same device and period. The analysis will rerun automatically after upload.';
+  byId('request-summary').textContent = investigation.status === 'optimization-review'
+    ? 'Add evidence for the named priority assets. The app will preserve the source names and test each reported opportunity before treating it as a root cause.'
+    : investigation.status === 'correlated'
+      ? 'The electrical pattern is supported. Add operational evidence to identify the exact equipment or trigger.'
+      : 'Add the requested reports for the same device and period. The analysis will rerun automatically after upload.';
   addListItems(byId('report-unknowns'), investigation.unknowns);
 
   const contextParts = [
@@ -402,6 +409,10 @@ const fileSelectionLabel = files => {
   return `${files.length} report${files.length === 1 ? '' : 's'} selected (${totalSize.toFixed(1)} MB)`;
 };
 
+byId('file-prompt').addEventListener('click', () => {
+  byId('report-file').click();
+});
+
 byId('report-file').addEventListener('change', event => {
   selectedReports = [...event.currentTarget.files];
   byId('analyze-report').disabled = !selectedReports.length;
@@ -424,13 +435,20 @@ const analyzeFiles = async (files, append) => {
   for (let index = 0; index < files.length; index += 1) {
     const file = files[index];
     byId('processing-status').textContent = `Opening ${file.name} (${index + 1} of ${files.length})...`;
-    const analysis = await analyzePdfReport(file, progress => {
-      byId('processing-status').textContent =
-        `Reading ${file.name}: page ${progress.pageNumber} of ${progress.pageLimit}` +
-        (progress.totalPages > progress.pageLimit
-          ? ` (${progress.totalPages} pages in the report)`
-          : '');
-    });
+    const isWorkbook = file.name.toLowerCase().endsWith('.xlsx');
+    const analysis = isWorkbook
+      ? await analyzeWorkbookReport(file, progress => {
+          byId('processing-status').textContent = progress.stage === 'opening'
+            ? `Opening workbook ${file.name}...`
+            : `Analyzing asset evidence in ${file.name}...`;
+        })
+      : await analyzePdfReport(file, progress => {
+          byId('processing-status').textContent =
+            `Reading ${file.name}: page ${progress.pageNumber} of ${progress.pageLimit}` +
+            (progress.totalPages > progress.pageLimit
+              ? ` (${progress.totalPages} pages in the report)`
+              : '');
+        });
     nextReports.push(analysis);
   }
 

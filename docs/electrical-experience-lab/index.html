@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A read-only Electrical Experience Lab demo that correlates PowerManager PDF reports into evidence-backed root-cause investigations."
+      content="A read-only Electrical Experience Lab demo that interprets energy reports and builds evidence-backed root-cause investigations."
     />
     <title>Root-cause investigation | Electrical Experience Lab</title>
     <link rel="stylesheet" href="styles.css" />
+    <script src="vendor/jszip/jszip.min.js"></script>
     <script src="app.js" type="module"></script>
   </head>
   <body>
@@ -27,9 +28,9 @@
       <section id="import-workspace" class="import-workspace" aria-labelledby="import-heading">
         <div class="import-copy">
           <p class="context-label">Root-cause investigation</p>
-          <h1 id="import-heading">Find the pattern behind an electrical event.</h1>
+          <h1 id="import-heading">Turn energy reports into an investigation.</h1>
           <p class="summary">
-            Upload one report or a related report pack. The app correlates device, time, energy, peak, and variance evidence before suggesting a cause.
+            Upload a report from your energy-management tool. The app preserves its device names, checks data quality, and asks for the evidence needed before suggesting a cause.
           </p>
           <div class="import-boundary">
             <strong>Evidence boundary</strong>
@@ -38,17 +39,17 @@
         </div>
 
         <form id="report-form" class="upload-panel">
-          <label class="upload-field" for="report-file">
-            <span>PowerManager PDFs</span>
-            <strong id="file-prompt">Choose reports</strong>
-            <small>For stronger analysis, add Absolute Energy, Power Peak, and Load Variance for the same device and time range.</small>
-          </label>
-          <input id="report-file" name="reports" type="file" accept="application/pdf,.pdf" multiple />
+          <div class="upload-field">
+            <span>Energy report files</span>
+            <button id="file-prompt" class="upload-trigger" type="button">Choose reports</button>
+            <small>Supports PDF investigation reports and XLSX performance or optimization reports. Related reports can be added for stronger analysis.</small>
+          </div>
+          <input id="report-file" name="reports" type="file" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" multiple />
           <div id="selected-file" class="selected-file" aria-live="polite">No reports selected</div>
           <button id="analyze-report" class="primary-action" type="submit" disabled>
             Start investigation
           </button>
-          <p class="privacy-note">The PDF is processed in this browser. It is not uploaded to a server.</p>
+          <p class="privacy-note">Files are processed in this browser. They are not uploaded to a server.</p>
         </form>
       </section>
 
@@ -56,7 +57,7 @@
         <div class="processing-line" aria-hidden="true"></div>
         <div>
           <h2>Reading report evidence</h2>
-          <p id="processing-status">Opening the PDF...</p>
+          <p id="processing-status">Opening the report...</p>
         </div>
       </section>
 
@@ -200,8 +201,8 @@
               <p id="context-status" class="context-status" aria-live="polite">No operational context applied</p>
             </form>
             <form id="additional-report-form" class="additional-report-form">
-              <label class="secondary-action" for="additional-report-files">Choose additional PDFs</label>
-              <input id="additional-report-files" name="additional-reports" type="file" accept="application/pdf,.pdf" multiple />
+              <label class="secondary-action" for="additional-report-files">Choose additional reports</label>
+              <input id="additional-report-files" name="additional-reports" type="file" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx" multiple />
               <span id="additional-file-status" aria-live="polite">No additional reports selected</span>
               <button id="add-reports" class="primary-action" type="submit" disabled>Add reports and rerun</button>
             </form>
@@ -215,7 +216,7 @@
           </div>
           <aside class="trust-panel">
             <div class="confidence-readout">
-              <span aria-hidden="true">PDF</span>
+              <span aria-hidden="true">FILE</span>
               <div>
                 <strong id="extraction-label"></strong>
                 <p id="extraction-detail"></p>

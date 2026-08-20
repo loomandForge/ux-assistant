@@ -211,8 +211,24 @@ main {
   letter-spacing: 0.06em;
 }
 
-.upload-field strong {
+.upload-trigger {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   font-size: 1.35rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.2em;
+}
+
+.upload-trigger:hover,
+.upload-trigger:focus-visible {
+  text-decoration-color: currentColor;
 }
 
 .upload-field small {

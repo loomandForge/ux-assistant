@@ -26,22 +26,27 @@ The server supports two complementary modes:
 ### Electrical Experience Lab
 
 The Electrical Experience Lab is an isolated experiment alongside the MCP review flow. It includes
-a browser-based PDF investigation demo and the original deterministic Scenario 001 example. The
-demo extracts native PowerManager PDF text, keeps device and measurement-point names unchanged,
-and correlates aligned reports into ranked, evidence-backed root-cause hypotheses.
+a browser-based energy-report investigation demo and the original deterministic Scenario 001
+example. The demo extracts native PDF and XLSX data, keeps device and measurement-point names
+unchanged, and turns aligned evidence into ranked, evidence-backed root-cause hypotheses.
 
 - Engine: [`src/electrical-experience-lab/`](src/electrical-experience-lab/)
 - Report investigation and read-only prototype: [`docs/electrical-experience-lab/`](docs/electrical-experience-lab/)
-- Supported report interpreters: Absolute Energy, Total Energy, Power Peak, and Load Variance
+- Supported report interpreters: Absolute Energy, Total Energy, Power Peak, Load Variance, and
+  Performance & Optimization workbooks
 - Correlated event rule: Absolute Energy, Power Peak, and Load Variance for the same device and time range
 - Regenerate Scenario 001 data and vendored PDF parser: `pnpm prototype:electrical`
 
-Uploaded PDFs are processed locally in the browser. A single report remains a preliminary analysis;
+Uploaded files are processed locally in the browser. A single interval report remains a preliminary analysis;
 the app requests corroborating reports instead of promoting one anomaly into a root-cause claim.
 When three aligned reports show a concentrated event, it ranks the electrical pattern separately
 from the still-unknown operational trigger and asks for a matched baseline, equipment schedule, and
 event log. It does not rename devices, claim an exact cause without evidence, or control equipment.
-It inspects at most 12 pages per report and states when a larger report was only partially read.
+For optimization workbooks, source-reported problems, suggestions, and potential values remain
+unverified leads. Probable counter-overflow values are excluded from rankings, and the app asks for
+interval data, operating schedules, and the meter hierarchy before claiming a cause or saving. It
+does not depend on a particular vendor name. For PDFs, it inspects at most 12 pages per report and
+states when a larger report was only partially read.
 Scenario 001 measurements remain synthetic fixture data for interface evaluation, not an electrical
 diagnosis or evidence of model performance.
 

@@ -484,7 +484,7 @@ const makeReportRequests = (alignedReports, hasMatchedBaseline, context) => {
       id: required.reportType.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-'),
       kind: 'report',
       label: required.label,
-      format: 'PowerManager PDF for the same device and time range',
+      format: 'Energy-report PDF for the same device and time range',
       reason: required.reason,
       priority: 'Needed for correlation',
     }));
@@ -720,8 +720,293 @@ const makePreliminaryHypotheses = ({ alignedReports, duplicateSeries }) => {
   ];
 };
 
+const makeOptimizationInvestigation = (report, reports, context) => {
+  const {
+    rowCount,
+    validRowCount,
+    invalidRows,
+    topBasePotential,
+    topPeakPotential,
+    topWork,
+  } = report.metrics;
+  const topBase = topBasePotential[0];
+  const topPeak = topPeakPotential[0];
+  const invalidNames = invalidRows.map(row => row.name);
+  const excludedReports = reports.filter(candidate => candidate !== report);
+  const reportEvidence = report.evidence.map(item => ({
+    ...item,
+    sourceFile: report.sourceFile,
+  }));
+
+  const hypotheses = [
+    ...(invalidRows.length
+      ? [{
+          id: 'counter-data-quality',
+          rank: 1,
+          title: 'Counter overflow, reset, or scaling issue',
+          status: 'Strong data-quality signal',
+          summary: `${invalidRows.length} row${invalidRows.length === 1 ? '' : 's'} contain values far outside the rest of the workbook. They were excluded before ranking opportunities.`,
+          supportingEvidence: invalidRows.slice(0, 6).map(
+            row => `${row.name}: ${formatNumber(row.workKwh)} kWh and ${formatNumber(row.peakPowerKw)} kW.`,
+          ),
+          conflictingEvidence: [
+            'The workbook does not contain meter range, multiplier, reset, or rollover configuration.',
+          ],
+          confirmationCheck: `Inspect the source counter configuration and raw readings for ${invalidNames.join(', ')}.`,
+        }]
+      : []),
+    ...(topBase
+      ? [{
+          id: 'reported-base-load-opportunity',
+          rank: invalidRows.length ? 2 : 1,
+          title: `Reported base-load opportunity: ${topBase.name}`,
+          status: 'Reported opportunity',
+          summary: `The source report ranks ${topBase.name} highest for base potential at ${formatNumber(topBase.basePotentialKwh)} kWh. This is a prioritization lead, not a verified saving or root cause.`,
+          supportingEvidence: [
+            `Source-reported problem: ${topBase.problem ?? 'Not provided'}.`,
+            `Source-reported suggestion: ${topBase.suggestion ?? 'Not provided'}.`,
+            `Source-reported base potential: ${formatNumber(topBase.basePotentialKwh)} kWh.`,
+          ],
+          conflictingEvidence: [
+            'No interval profile or operating schedule is included to show when the base load occurred.',
+            'The asset hierarchy is unknown, so parent and child meters may overlap.',
+          ],
+          confirmationCheck: `Compare ${topBase.name} interval consumption with expected operating hours and a matched baseline.`,
+        }]
+      : []),
+    ...(topPeak
+      ? [{
+          id: 'reported-peak-opportunity',
+          rank: (invalidRows.length ? 1 : 0) + (topBase ? 2 : 1),
+          title: `Reported peak opportunity: ${topPeak.name}`,
+          status: 'Reported opportunity',
+          summary: `The source report ranks ${topPeak.name} highest for peak potential at ${formatNumber(topPeak.peakPotentialKw)} kW. The peak time and operating trigger are not present in this workbook.`,
+          supportingEvidence: [
+            `Source-reported problem: ${topPeak.problem ?? 'Not provided'}.`,
+            `Source-reported suggestion: ${topPeak.suggestion ?? 'Not provided'}.`,
+            `Source-reported peak potential: ${formatNumber(topPeak.peakPotentialKw)} kW.`,
+          ],
+          conflictingEvidence: [
+            'No demand interval report identifies when the site peak occurred.',
+            'No equipment sequence or event log connects this asset to the site peak.',
+          ],
+          confirmationCheck: `Compare ${topPeak.name} demand intervals with the site peak window and equipment sequence.`,
+        }]
+      : []),
+  ];
+
+  if (!hypotheses.length) {
+    hypotheses.push({
+      id: 'optimization-evidence-gap',
+      rank: 1,
+      title: 'Optimization cause not established',
+      status: 'Insufficient evidence',
+      summary: topWork[0]
+        ? `${topWork[0].name} has the highest valid work value, but the workbook does not provide a quantified base or peak opportunity.`
+        : 'The workbook does not contain enough valid values to rank an optimization opportunity.',
+      supportingEvidence: topWork[0]
+        ? [`Highest valid work value: ${topWork[0].name}, ${formatNumber(topWork[0].workKwh)} kWh.`]
+        : [],
+      conflictingEvidence: [
+        'No independently verified interval pattern, operating trigger, or quantified potential is available.',
+      ],
+      confirmationCheck: 'Add timestamped interval data and the expected operating schedule for the leading asset.',
+    });
+  }
+
+  const requests = [
+    ...(invalidRows.length
+      ? [{
+          id: 'counter-configuration',
+          kind: 'operational-data',
+          label: 'Meter or counter configuration',
+          format: `Raw counter export and multiplier, range, reset, or rollover settings for ${invalidNames.join(', ')}`,
+          reason: 'Confirms whether the excluded values are overflow, reset, scaling, or valid readings.',
+          priority: 'Needed to resolve data quality',
+        }]
+      : []),
+    ...(topBase
+      ? [{
+          id: 'base-load-interval-data',
+          kind: 'report',
+          label: `${topBase.name} interval energy report`,
+          format: 'CSV, XLSX, or PDF with timestamped kWh for the same month',
+          reason: 'Shows whether the reported base opportunity occurs off-hours or is required continuous load.',
+          priority: 'Needed to verify base-load cause',
+        }]
+      : []),
+    ...(topPeak
+      ? [{
+          id: 'peak-demand-interval-data',
+          kind: 'report',
+          label: `${topPeak.name} and site peak-demand report`,
+          format: 'CSV, XLSX, or PDF with aligned timestamped kW intervals',
+          reason: 'Shows whether the asset coincides with and materially contributes to the site peak.',
+          priority: 'Needed to verify peak cause',
+        }]
+      : []),
+    {
+      id: 'asset-hierarchy',
+      kind: 'operational-data',
+      label: 'Asset and meter hierarchy',
+      format: 'Parent-child meter map or single-line diagram with the workbook asset names',
+      reason: 'Prevents double counting and connects reported assets to systems and areas.',
+      priority: 'Needed for contribution analysis',
+    },
+    {
+      id: 'operating-schedule',
+      kind: 'operational-data',
+      label: 'Expected operating schedule',
+      format: 'Occupied hours and equipment schedules for the priority assets',
+      reason: 'Separates required operation from avoidable off-hours or extended runtime.',
+      priority: 'Needed to confirm the cause',
+    },
+  ];
+
+  const topOpportunity = topBase
+    ? `${topBase.name}: ${formatNumber(topBase.basePotentialKwh)} kWh`
+    : topPeak
+      ? `${topPeak.name}: ${formatNumber(topPeak.peakPotentialKw)} kW`
+      : 'No ranked potential found';
+
+  return {
+    status: 'optimization-review',
+    title: invalidRows.length
+      ? 'Optimization opportunities are ranked after excluding probable counter errors.'
+      : 'The source report contains optimization leads that are ready for validation.',
+    summary: `${validRowCount} of ${rowCount} asset rows were used for ranking. Device names are preserved from the workbook; its problems, suggestions, and potential values remain source-reported until supporting interval and operational evidence is added.`,
+    confidence: {
+      level: 'Medium',
+      rationale: 'The workbook extraction and ranking are deterministic, while the proposed causes and savings have not been independently confirmed.',
+    },
+    category: {
+      id: 'portfolio-optimization-review',
+      label: 'Portfolio optimization and data-quality review',
+      rationale: 'The workbook ranks asset-level potential across a portfolio but does not contain the interval or operational evidence needed to prove each cause.',
+    },
+    impact: {
+      status: 'reported',
+      label: 'Highest source-reported opportunity',
+      value: topOpportunity,
+      summary: topBase
+        ? `${topBase.name} has the highest reported base potential. Treat it as a lead to investigate, not an achieved or guaranteed saving.`
+        : 'No source-reported base-load potential was available for a quantified lead.',
+      evidence: topBase
+        ? [`Source-reported base potential: ${formatNumber(topBase.basePotentialKwh)} kWh.`]
+        : [],
+      missingInputs: ['Timestamped interval data', 'Expected operating schedule', 'Matched baseline', 'Asset hierarchy'],
+      caveat: 'Do not sum workbook work or potential values as a site total until the parent-child meter hierarchy is known.',
+    },
+    operationalContext: {
+      occupiedStart: context.occupiedStart ?? null,
+      occupiedEnd: context.occupiedEnd ?? null,
+      energyRatePerKwh: context.energyRatePerKwh ?? null,
+      currency: context.currency ?? null,
+    },
+    deviceName: report.deviceName,
+    timeRange: report.timeRange,
+    reportCount: reports.length,
+    alignedReportCount: 1,
+    excludedReportCount: excludedReports.length,
+    reportTypes: [report.reportType],
+    eventWindow: 'Not available in this summary report',
+    evidence: [
+      ...reportEvidence,
+      ...(topWork[0]
+        ? [{
+            label: 'Highest valid work value',
+            value: `${topWork[0].name}: ${formatNumber(topWork[0].workKwh)} kWh`,
+            sourceFile: report.sourceFile,
+          }]
+        : []),
+    ],
+    hypotheses,
+    requests,
+    verificationPlan: [
+      {
+        title: 'Resolve source-data exceptions',
+        when: 'Before comparing or summing assets',
+        evidence: invalidRows.length
+          ? `Validate raw readings and counter settings for ${invalidNames.join(', ')}.`
+          : 'Confirm that source readings and multipliers are valid.',
+        success: 'The reviewer accepts or corrects every excluded value and documents the reason.',
+      },
+      {
+        title: 'Confirm the meter hierarchy',
+        when: 'Before calculating site contribution',
+        evidence: 'Map parent meters, child meters, systems, and areas using the workbook device names.',
+        success: 'Contributor totals exclude overlapping parent-child energy.',
+      },
+      {
+        title: 'Verify the leading cause',
+        when: 'Before recommending an operational change',
+        evidence: 'Add aligned interval data, expected schedules, and event or control logs for the leading asset.',
+        success: 'A named operating condition explains the pattern without conflicting evidence.',
+      },
+      {
+        title: 'Measure the result',
+        when: 'After a human-approved change',
+        evidence: 'Compare a matched post-change period with the locked baseline and record operational side effects.',
+        success: 'The targeted energy or demand pattern improves without a safety, comfort, or production issue.',
+      },
+    ],
+    capabilityRoadmap: [
+      {
+        title: 'Cross-tool asset opportunity ranking',
+        status: 'Ready now',
+        when: 'Use to identify which named assets deserve investigation first.',
+        requires: ['Performance and optimization workbook', 'Data-quality screening'],
+        outcome: 'Ranks valid source-reported base and peak opportunities without renaming devices.',
+      },
+      {
+        title: 'Asset-level root-cause confirmation',
+        status: 'Add interval data',
+        when: 'Use after selecting a priority asset from the workbook.',
+        requires: ['Timestamped asset intervals', 'Operating schedule', 'Event or control log'],
+        outcome: 'Tests whether schedule, sequencing, standby load, or another operating condition explains the opportunity.',
+      },
+      {
+        title: 'Verified energy and cost impact',
+        status: 'Add baseline and tariff',
+        when: 'Use only after the source-reported potential has been independently checked.',
+        requires: ['Matched baseline', 'Validated interval data', 'Tariff and currency'],
+        outcome: 'Calculates measured change and a clearly bounded cost estimate.',
+      },
+      {
+        title: 'Equipment efficiency and maintenance',
+        status: 'Later',
+        when: 'Use when energy can be paired with runtime and useful output.',
+        requires: ['Runtime or ON/OFF status', 'Output or capacity measurement', 'Matched historical performance'],
+        outcome: 'Separates efficiency degradation from increased production or load.',
+      },
+      {
+        title: 'Automated optimization or control',
+        status: 'Not yet',
+        when: 'Consider only after practitioner validation, approval, rollback, and equipment safeguards are designed.',
+        requires: ['Validated recommendations', 'Human approval workflow', 'Control integration and rollback', 'Safety review'],
+        outcome: 'Remains outside this read-only prototype.',
+      },
+    ],
+    unknowns: [
+      ...report.unknowns,
+      ...(!context.energyRatePerKwh || !context.currency
+        ? ['No tariff was supplied, so no cost impact has been calculated.']
+        : []),
+      ...(excludedReports.length
+        ? [`${excludedReports.length} other uploaded report${excludedReports.length === 1 ? ' was' : 's were'} not combined with this portfolio summary.`]
+        : []),
+    ],
+  };
+};
+
 export const analyzeReportSet = (reports, context = {}) => {
   if (!reports.length) throw new Error('Add at least one report to start an investigation.');
+
+  const optimizationReport = reports.find(report => report.metrics?.kind === 'optimization');
+  const hasIntervalReport = reports.some(report => report.metrics?.kind === 'series');
+  if (optimizationReport && !hasIntervalReport) {
+    return makeOptimizationInvestigation(optimizationReport, reports, context);
+  }
 
   const deviceName = mostCommon(
     reports.map(report => report.deviceName).filter(value => !/^Not /.test(value)),
