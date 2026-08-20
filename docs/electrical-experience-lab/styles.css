@@ -221,7 +221,8 @@ main {
   line-height: 1.45;
 }
 
-#report-file {
+#report-file,
+#additional-report-files {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -358,6 +359,7 @@ main {
 }
 
 .report-evidence,
+.hypothesis-section,
 .recommendation-section,
 .report-trust {
   padding: 88px 0;
@@ -372,8 +374,8 @@ main {
 
 .recommendation-list article {
   display: grid;
-  grid-template-columns: minmax(180px, 0.6fr) minmax(0, 1.4fr);
-  gap: 30px;
+  grid-template-columns: minmax(170px, 0.55fr) minmax(0, 1.45fr);
+  gap: 8px 30px;
   padding: 24px 0;
   border-bottom: 1px solid var(--line);
 }
@@ -383,7 +385,8 @@ main {
 }
 
 .recommendation-list h3,
-.recommendation-list p {
+.recommendation-list p,
+.recommendation-list small {
   margin: 0;
 }
 
@@ -392,8 +395,141 @@ main {
 }
 
 .recommendation-list p,
+.recommendation-list small,
 .report-trust li {
   color: var(--muted);
+}
+
+.request-priority {
+  grid-column: 1;
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.recommendation-list h3 {
+  grid-column: 1;
+}
+
+.recommendation-list p,
+.recommendation-list small {
+  grid-column: 2;
+}
+
+.recommendation-list small {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+}
+
+.additional-report-form {
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.additional-report-form span {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+}
+
+.hypothesis-section {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.52fr) minmax(0, 1.48fr);
+  gap: clamp(48px, 8vw, 104px);
+}
+
+.hypothesis-list {
+  display: grid;
+  gap: 18px;
+}
+
+.hypothesis-list > article {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: clamp(22px, 4vw, 32px);
+  background: var(--surface);
+}
+
+.hypothesis-list header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 6px 20px;
+}
+
+.hypothesis-rank {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hypothesis-list h3,
+.hypothesis-list h4,
+.hypothesis-list p {
+  margin: 0;
+}
+
+.hypothesis-list header strong {
+  border-radius: 6px;
+  padding: 5px 8px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.hypothesis-list header strong[data-status="supported-pattern"] {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.hypothesis-list > article > p {
+  margin-top: 14px;
+  color: var(--muted);
+}
+
+.hypothesis-evidence {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.hypothesis-evidence h4 {
+  font-size: 0.82rem;
+}
+
+.hypothesis-evidence ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.hypothesis-evidence li + li {
+  margin-top: 7px;
+}
+
+.confirmation-check {
+  padding: 15px 17px;
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--ink) !important;
+  font-size: 0.88rem;
 }
 
 .report-trust {
@@ -951,6 +1087,7 @@ footer a:hover {
   .reasoning-section,
   .investigation-panel,
   .result-signal-layout,
+  .hypothesis-section,
   .recommendation-section,
   .report-trust {
     grid-template-columns: 1fr;
@@ -1054,6 +1191,7 @@ footer a:hover {
 
   .result-signal-layout,
   .report-evidence,
+  .hypothesis-section,
   .recommendation-section,
   .report-trust {
     padding: 64px 0;
@@ -1084,8 +1222,20 @@ footer a:hover {
   .boundary-grid,
   .review-layout,
   .critic-list,
-  .hidden-details {
+  .hidden-details,
+  .hypothesis-evidence,
+  .additional-report-form {
     grid-template-columns: 1fr;
+  }
+
+  .recommendation-list p,
+  .recommendation-list small {
+    grid-column: 1;
+  }
+
+  .additional-report-form .primary-action,
+  .additional-report-form .secondary-action {
+    width: 100%;
   }
 
   .boundary-grid > div + div {

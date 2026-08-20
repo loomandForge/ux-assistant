@@ -1,8 +1,10 @@
-import { analyzePdfReport } from './report-analysis.js';
+import { analyzePdfReport, analyzeReportSet } from './report-analysis.js';
 
 const byId = id => document.getElementById(id);
 
-let selectedReport = null;
+let selectedReports = [];
+let selectedAdditionalReports = [];
+let analyzedReports = [];
 
 const formatCapability = capability => capability.replaceAll('_', ' ');
 
@@ -112,36 +114,104 @@ const renderRecommendations = recommendations => {
 
   for (const recommendation of recommendations) {
     const article = document.createElement('article');
+    const priority = document.createElement('span');
     const title = document.createElement('h3');
     const rationale = document.createElement('p');
+    const format = document.createElement('small');
+    priority.className = 'request-priority';
+    priority.textContent = recommendation.priority;
     title.textContent = recommendation.title;
     rationale.textContent = recommendation.rationale;
-    article.append(title, rationale);
+    format.textContent = recommendation.format;
+    article.append(priority, title, rationale, format);
     list.append(article);
   }
 };
 
-const renderReportAnalysis = analysis => {
-  byId('result-report-type').textContent = analysis.reportType;
-  byId('report-result-heading').textContent = analysis.primary.title;
-  byId('result-summary').textContent = analysis.primary.summary;
-  byId('result-primary-value').textContent = analysis.primary.value;
-  byId('result-primary-label').textContent = `${analysis.primary.label} (${analysis.primary.unit})`;
-  byId('result-device').textContent = analysis.deviceName;
-  byId('result-measurement').textContent = analysis.measurementPoint;
-  byId('result-time-range').textContent = analysis.timeRange;
-  byId('result-source').textContent = analysis.sourceFile;
-  byId('interpretation-text').textContent =
-    `${analysis.primary.summary} ${analysis.unknowns[0]}`;
-  byId('extraction-label').textContent = analysis.extraction.label;
-  byId('extraction-detail').textContent = analysis.extraction.detail;
-  byId('page-boundary').textContent = analysis.truncated
-    ? `The first ${analysis.pagesProcessed} of ${analysis.totalPages} pages were inspected. Use a smaller export for full coverage.`
-    : `All ${analysis.totalPages} report pages were inspected.`;
+const renderHypotheses = hypotheses => {
+  const list = byId('hypothesis-list');
+  list.replaceChildren();
 
-  renderReportEvidence(analysis.evidence);
-  renderRecommendations(analysis.recommendations);
-  addListItems(byId('report-unknowns'), analysis.unknowns);
+  for (const hypothesis of hypotheses) {
+    const article = document.createElement('article');
+    const header = document.createElement('header');
+    const rank = document.createElement('span');
+    const title = document.createElement('h3');
+    const status = document.createElement('strong');
+    const summary = document.createElement('p');
+    const evidenceLayout = document.createElement('div');
+    const supporting = document.createElement('section');
+    const conflicting = document.createElement('section');
+    const supportingTitle = document.createElement('h4');
+    const conflictingTitle = document.createElement('h4');
+    const supportingList = document.createElement('ul');
+    const conflictingList = document.createElement('ul');
+    const check = document.createElement('p');
+
+    rank.className = 'hypothesis-rank';
+    rank.textContent = `Hypothesis ${hypothesis.rank}`;
+    title.textContent = hypothesis.title;
+    status.textContent = hypothesis.status;
+    status.dataset.status = hypothesis.status.toLowerCase().replaceAll(' ', '-');
+    summary.textContent = hypothesis.summary;
+    supportingTitle.textContent = 'Supporting evidence';
+    conflictingTitle.textContent = 'Counter-evidence or gap';
+    addListItems(supportingList, hypothesis.supportingEvidence.length
+      ? hypothesis.supportingEvidence
+      : ['No direct supporting evidence in the current report set.']);
+    addListItems(conflictingList, hypothesis.conflictingEvidence);
+    check.className = 'confirmation-check';
+    check.textContent = `Confirmation check: ${hypothesis.confirmationCheck}`;
+
+    header.append(rank, title, status);
+    supporting.append(supportingTitle, supportingList);
+    conflicting.append(conflictingTitle, conflictingList);
+    evidenceLayout.className = 'hypothesis-evidence';
+    evidenceLayout.append(supporting, conflicting);
+    article.append(header, summary, evidenceLayout, check);
+    list.append(article);
+  }
+};
+
+const renderReportAnalysis = (investigation, reports) => {
+  byId('result-report-type').textContent = investigation.status === 'correlated'
+    ? 'Correlated root-cause investigation'
+    : 'Preliminary root-cause investigation';
+  byId('report-result-heading').textContent = investigation.title;
+  byId('result-summary').textContent = investigation.summary;
+  byId('result-primary-value').textContent = investigation.confidence.level;
+  byId('result-primary-label').textContent = 'Pattern confidence';
+  byId('result-device').textContent = investigation.deviceName;
+  byId('result-measurement').textContent = investigation.eventWindow;
+  byId('result-time-range').textContent = investigation.timeRange;
+  byId('result-source').textContent = `${investigation.alignedReportCount} of ${investigation.reportCount} uploaded reports`;
+  byId('interpretation-text').textContent =
+    `${investigation.hypotheses[0].summary} ${investigation.confidence.rationale}`;
+  byId('extraction-label').textContent = `${investigation.alignedReportCount} aligned reports`;
+  byId('extraction-detail').textContent = investigation.reportTypes.join(', ') || 'No supported interval reports';
+
+  const totalPages = reports.reduce((sum, report) => sum + report.totalPages, 0);
+  const pagesProcessed = reports.reduce((sum, report) => sum + report.pagesProcessed, 0);
+  const truncatedCount = reports.filter(report => report.truncated).length;
+  byId('page-boundary').textContent = truncatedCount
+    ? `${pagesProcessed} of ${totalPages} total pages were inspected. ${truncatedCount} report${truncatedCount === 1 ? ' was' : 's were'} truncated at the 12-page safety limit.`
+    : `All ${totalPages} pages across the uploaded report set were inspected.`;
+
+  renderHypotheses(investigation.hypotheses);
+  renderReportEvidence(investigation.evidence.map(item => ({
+    label: item.label,
+    value: `${item.value} Source: ${item.sourceFile}`,
+  })));
+  renderRecommendations(investigation.requests.map(request => ({
+    title: request.label,
+    rationale: request.reason,
+    priority: request.priority,
+    format: request.format,
+  })));
+  byId('request-summary').textContent = investigation.status === 'correlated'
+    ? 'The electrical pattern is supported. Add operational evidence to identify the exact equipment or trigger.'
+    : 'Add the requested reports for the same device and period. The analysis will rerun automatically after upload.';
+  addListItems(byId('report-unknowns'), investigation.unknowns);
 
   byId('import-workspace').hidden = true;
   byId('report-processing').hidden = true;
@@ -155,11 +225,16 @@ const renderReportAnalysis = analysis => {
 };
 
 const resetReportFlow = () => {
-  selectedReport = null;
+  selectedReports = [];
+  selectedAdditionalReports = [];
+  analyzedReports = [];
   byId('report-form').reset();
-  byId('selected-file').textContent = 'No report selected';
-  byId('file-prompt').textContent = 'Choose a report';
+  byId('additional-report-form').reset();
+  byId('selected-file').textContent = 'No reports selected';
+  byId('additional-file-status').textContent = 'No additional reports selected';
+  byId('file-prompt').textContent = 'Choose reports';
   byId('analyze-report').disabled = true;
+  byId('add-reports').disabled = true;
   byId('report-results').hidden = true;
   byId('report-processing').hidden = true;
   byId('report-error').hidden = true;
@@ -243,25 +318,57 @@ byId('review-check').addEventListener('click', event => {
   if (!isOpen) panel.focus({ preventScroll: true });
 });
 
-byId('report-file').addEventListener('change', event => {
-  const [file] = event.currentTarget.files;
-  selectedReport = file ?? null;
-  byId('analyze-report').disabled = !selectedReport;
+const fileSelectionLabel = files => {
+  if (!files.length) return 'No reports selected';
+  const totalSize = files.reduce((sum, file) => sum + file.size, 0) / (1024 * 1024);
+  return `${files.length} report${files.length === 1 ? '' : 's'} selected (${totalSize.toFixed(1)} MB)`;
+};
 
-  if (!selectedReport) {
-    byId('file-prompt').textContent = 'Choose a report';
-    byId('selected-file').textContent = 'No report selected';
-    return;
+byId('report-file').addEventListener('change', event => {
+  selectedReports = [...event.currentTarget.files];
+  byId('analyze-report').disabled = !selectedReports.length;
+  byId('file-prompt').textContent = selectedReports.length
+    ? `${selectedReports.length} report${selectedReports.length === 1 ? '' : 's'} selected`
+    : 'Choose reports';
+  byId('selected-file').textContent = fileSelectionLabel(selectedReports);
+});
+
+byId('additional-report-files').addEventListener('change', event => {
+  selectedAdditionalReports = [...event.currentTarget.files];
+  byId('add-reports').disabled = !selectedAdditionalReports.length;
+  byId('additional-file-status').textContent = selectedAdditionalReports.length
+    ? fileSelectionLabel(selectedAdditionalReports)
+    : 'No additional reports selected';
+});
+
+const analyzeFiles = async (files, append) => {
+  const nextReports = [];
+  for (let index = 0; index < files.length; index += 1) {
+    const file = files[index];
+    byId('processing-status').textContent = `Opening ${file.name} (${index + 1} of ${files.length})...`;
+    const analysis = await analyzePdfReport(file, progress => {
+      byId('processing-status').textContent =
+        `Reading ${file.name}: page ${progress.pageNumber} of ${progress.pageLimit}` +
+        (progress.totalPages > progress.pageLimit
+          ? ` (${progress.totalPages} pages in the report)`
+          : '');
+    });
+    nextReports.push(analysis);
   }
 
-  const size = selectedReport.size / (1024 * 1024);
-  byId('file-prompt').textContent = 'Report selected';
-  byId('selected-file').textContent = `${selectedReport.name} (${size.toFixed(1)} MB)`;
-});
+  const combined = append ? [...analyzedReports, ...nextReports] : nextReports;
+  analyzedReports = [...new Map(
+    combined.map(report => [
+      `${report.sourceFile}|${report.reportType}|${report.timeRange}`,
+      report,
+    ]),
+  ).values()];
+  renderReportAnalysis(analyzeReportSet(analyzedReports), analyzedReports);
+};
 
 byId('report-form').addEventListener('submit', async event => {
   event.preventDefault();
-  if (!selectedReport) return;
+  if (!selectedReports.length) return;
 
   byId('report-error').hidden = true;
   byId('report-processing').hidden = false;
@@ -269,18 +376,32 @@ byId('report-form').addEventListener('submit', async event => {
   byId('analyze-report').disabled = true;
 
   try {
-    const analysis = await analyzePdfReport(selectedReport, progress => {
-      byId('processing-status').textContent =
-        `Extracting page ${progress.pageNumber} of ${progress.pageLimit}` +
-        (progress.totalPages > progress.pageLimit
-          ? ` (${progress.totalPages} pages in the report)`
-          : '');
-    });
-    renderReportAnalysis(analysis);
+    await analyzeFiles(selectedReports, false);
   } catch (error) {
     showReportError(error instanceof Error ? error : new Error('The report could not be read.'));
   } finally {
-    byId('analyze-report').disabled = !selectedReport;
+    byId('analyze-report').disabled = !selectedReports.length;
+  }
+});
+
+byId('additional-report-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!selectedAdditionalReports.length) return;
+
+  byId('report-results').hidden = true;
+  byId('report-error').hidden = true;
+  byId('report-processing').hidden = false;
+  byId('add-reports').disabled = true;
+
+  try {
+    await analyzeFiles(selectedAdditionalReports, true);
+    selectedAdditionalReports = [];
+    byId('additional-report-form').reset();
+    byId('additional-file-status').textContent = 'No additional reports selected';
+  } catch (error) {
+    showReportError(error instanceof Error ? error : new Error('The additional reports could not be read.'));
+  } finally {
+    byId('add-reports').disabled = !selectedAdditionalReports.length;
   }
 });
 

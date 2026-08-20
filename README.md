@@ -26,19 +26,24 @@ The server supports two complementary modes:
 ### Electrical Experience Lab
 
 The Electrical Experience Lab is an isolated experiment alongside the MCP review flow. It includes
-a browser-based PDF report demo and the original deterministic Scenario 001 example. The report
+a browser-based PDF investigation demo and the original deterministic Scenario 001 example. The
 demo extracts native PowerManager PDF text, keeps device and measurement-point names unchanged,
-and turns supported readings into evidence-backed investigation recommendations.
+and correlates aligned reports into ranked, evidence-backed root-cause hypotheses.
 
 - Engine: [`src/electrical-experience-lab/`](src/electrical-experience-lab/)
-- Report demo and read-only prototype: [`docs/electrical-experience-lab/`](docs/electrical-experience-lab/)
+- Report investigation and read-only prototype: [`docs/electrical-experience-lab/`](docs/electrical-experience-lab/)
 - Supported report interpreters: Absolute Energy, Total Energy, Power Peak, and Load Variance
+- Correlated event rule: Absolute Energy, Power Peak, and Load Variance for the same device and time range
 - Regenerate Scenario 001 data and vendored PDF parser: `pnpm prototype:electrical`
 
-Uploaded PDFs are processed locally in the browser. The report demo does not upload files, rename
-devices, diagnose root cause, or control equipment. It inspects at most 12 pages per report and
-states when a larger report was only partially read. Scenario 001 measurements remain synthetic
-fixture data for interface evaluation, not an electrical diagnosis or evidence of model performance.
+Uploaded PDFs are processed locally in the browser. A single report remains a preliminary analysis;
+the app requests corroborating reports instead of promoting one anomaly into a root-cause claim.
+When three aligned reports show a concentrated event, it ranks the electrical pattern separately
+from the still-unknown operational trigger and asks for a matched baseline, equipment schedule, and
+event log. It does not rename devices, claim an exact cause without evidence, or control equipment.
+It inspects at most 12 pages per report and states when a larger report was only partially read.
+Scenario 001 measurements remain synthetic fixture data for interface evaluation, not an electrical
+diagnosis or evidence of model performance.
 
 ## Visual Architecture
 

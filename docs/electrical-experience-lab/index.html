@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A read-only Electrical Experience Lab demo that interprets PowerManager PDF reports."
+      content="A read-only Electrical Experience Lab demo that correlates PowerManager PDF reports into evidence-backed root-cause investigations."
     />
-    <title>Report interpretation demo | Electrical Experience Lab</title>
+    <title>Root-cause investigation | Electrical Experience Lab</title>
     <link rel="stylesheet" href="styles.css" />
     <script src="app.js" type="module"></script>
   </head>
@@ -19,34 +19,34 @@
       </a>
       <div class="lab-identity">
         <span>Electrical Experience Lab</span>
-        <span id="scenario-id">Report demo</span>
+        <span id="scenario-id">Investigation demo</span>
       </div>
     </header>
 
     <main>
       <section id="import-workspace" class="import-workspace" aria-labelledby="import-heading">
         <div class="import-copy">
-          <p class="context-label">Report interpretation demo</p>
-          <h1 id="import-heading">Interpret a PowerManager report.</h1>
+          <p class="context-label">Root-cause investigation</p>
+          <h1 id="import-heading">Find the pattern behind an electrical event.</h1>
           <p class="summary">
-            Upload a PDF to extract its device name, measured values, and evidence-backed recommendations.
+            Upload one report or a related report pack. The app correlates device, time, energy, peak, and variance evidence before suggesting a cause.
           </p>
           <div class="import-boundary">
-            <strong>What stays fixed</strong>
-            <p>Device and measurement-point names remain exactly as written in the report.</p>
+            <strong>Evidence boundary</strong>
+            <p>The app preserves report names and asks for missing evidence instead of turning a single anomaly into a diagnosis.</p>
           </div>
         </div>
 
         <form id="report-form" class="upload-panel">
           <label class="upload-field" for="report-file">
-            <span>PowerManager PDF</span>
-            <strong id="file-prompt">Choose a report</strong>
-            <small>Supported now: Absolute Energy, Total Energy, Power Peak, and Load Variance.</small>
+            <span>PowerManager PDFs</span>
+            <strong id="file-prompt">Choose reports</strong>
+            <small>For stronger analysis, add Absolute Energy, Power Peak, and Load Variance for the same device and time range.</small>
           </label>
-          <input id="report-file" name="report" type="file" accept="application/pdf,.pdf" />
-          <div id="selected-file" class="selected-file" aria-live="polite">No report selected</div>
+          <input id="report-file" name="reports" type="file" accept="application/pdf,.pdf" multiple />
+          <div id="selected-file" class="selected-file" aria-live="polite">No reports selected</div>
           <button id="analyze-report" class="primary-action" type="submit" disabled>
-            Generate insights
+            Start investigation
           </button>
           <p class="privacy-note">The PDF is processed in this browser. It is not uploaded to a server.</p>
         </form>
@@ -81,7 +81,7 @@
             <h1 id="report-result-heading"></h1>
             <p id="result-summary" class="summary"></p>
           </div>
-          <button id="replace-report" class="secondary-action" type="button">Analyze another report</button>
+          <button id="replace-report" class="secondary-action" type="button">Start new investigation</button>
         </div>
 
         <div class="result-signal-layout">
@@ -96,7 +96,7 @@
                 <dd id="result-device"></dd>
               </div>
               <div>
-                <dt>Measurement point</dt>
+                <dt>Event window</dt>
                 <dd id="result-measurement"></dd>
               </div>
               <div>
@@ -104,15 +104,15 @@
                 <dd id="result-time-range"></dd>
               </div>
               <div>
-                <dt>Source</dt>
+                <dt>Aligned evidence</dt>
                 <dd id="result-source"></dd>
               </div>
             </dl>
           </aside>
 
           <div class="interpretation-panel">
-            <p class="context-label">Interpretation</p>
-            <h2>What this report supports</h2>
+            <p class="context-label">Investigation finding</p>
+            <h2>Best-supported explanation</h2>
             <p id="interpretation-text"></p>
             <div class="autonomy-row">
               <span>Selected autonomy</span>
@@ -122,25 +122,41 @@
           </div>
         </div>
 
+        <section class="hypothesis-section" aria-labelledby="hypothesis-heading">
+          <div class="section-intro">
+            <h2 id="hypothesis-heading">Ranked causal hypotheses</h2>
+            <p>Each hypothesis includes supporting evidence, counter-evidence, and a check that can confirm or reject it.</p>
+          </div>
+          <div id="hypothesis-list" class="hypothesis-list"></div>
+        </section>
+
         <section class="report-evidence" aria-labelledby="report-evidence-heading">
           <div class="section-intro">
-            <h2 id="report-evidence-heading">Extracted evidence</h2>
-            <p>Every recommendation below is traceable to these report fields and calculations.</p>
+            <h2 id="report-evidence-heading">Correlated report evidence</h2>
+            <p>Only reports with a matching device and time range contribute to the investigation.</p>
           </div>
           <div id="report-evidence-grid" class="evidence-grid"></div>
         </section>
 
         <section class="recommendation-section" aria-labelledby="recommendation-heading">
           <div class="section-intro">
-            <h2 id="recommendation-heading">Recommended investigation</h2>
-            <p>Checks remain reversible and require a person to confirm the operational context.</p>
+            <h2 id="recommendation-heading">Evidence requested from you</h2>
+            <p id="request-summary">Add the missing reports or operational data to strengthen the root-cause analysis.</p>
           </div>
-          <div id="recommendation-list" class="recommendation-list"></div>
+          <div>
+            <div id="recommendation-list" class="recommendation-list"></div>
+            <form id="additional-report-form" class="additional-report-form">
+              <label class="secondary-action" for="additional-report-files">Choose additional PDFs</label>
+              <input id="additional-report-files" name="additional-reports" type="file" accept="application/pdf,.pdf" multiple />
+              <span id="additional-file-status" aria-live="polite">No additional reports selected</span>
+              <button id="add-reports" class="primary-action" type="submit" disabled>Add reports and rerun</button>
+            </form>
+          </div>
         </section>
 
         <section class="report-trust" aria-labelledby="report-trust-heading">
           <div>
-            <h2 id="report-trust-heading">What remains unknown</h2>
+            <h2 id="report-trust-heading">Boundaries and unknowns</h2>
             <ul id="report-unknowns"></ul>
           </div>
           <aside class="trust-panel">

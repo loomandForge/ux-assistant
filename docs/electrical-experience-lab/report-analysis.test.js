@@ -3,7 +3,7 @@ import test from 'node:test';
 
 globalThis.DOMMatrix = class DOMMatrix {};
 
-const { analyzeExtractedReport } = await import('./report-analysis.js');
+const { analyzeExtractedReport, analyzeReportSet } = await import('./report-analysis.js');
 
 const item = (text, x = 0, y = 0) => ({ text, x, y });
 
@@ -93,4 +93,99 @@ test('calculates interval evidence and flags a duplicated series', () => {
   assert.match(analysis.primary.summary, /15 kWh average across 2 extracted intervals/i);
   assert.ok(analysis.evidence.some(entry => /two identical series/i.test(entry.value)));
   assert.ok(analysis.recommendations.some(check => /duplicated series/i.test(check.title)));
+});
+
+const seriesReport = ({
+  sourceFile,
+  reportType,
+  maximumTimestamp,
+  maximumValue,
+  unit,
+  peakRatio,
+  isolatedPeak = true,
+  duplicateSeries = false,
+}) => ({
+  sourceFile,
+  reportType,
+  timeRange: '01/06/2020 00:00 to 02/06/2020 00:00',
+  totalPages: 2,
+  pagesProcessed: 2,
+  truncated: false,
+  deviceName: 'pac3200 One',
+  measurementPoint: reportType === 'Absolute Energy'
+    ? 'Active Energy Import Tariff 1'
+    : '(EM) Cumulated Active Power Import',
+  unit,
+  metrics: {
+    kind: 'series',
+    readingCount: 96,
+    average: maximumValue / peakRatio,
+    minimum: { timestamp: '01/06/2020 23:30:00', value: 5.36 },
+    maximum: { timestamp: maximumTimestamp, value: maximumValue },
+    total: maximumValue * 10,
+    peakRatio,
+    peakToNeighborRatio: 3,
+    highIntervalCount: 1,
+    isolatedPeak,
+    duplicateSeries,
+  },
+});
+
+test('asks for corroborating reports when only one report is available', () => {
+  const investigation = analyzeReportSet([
+    seriesReport({
+      sourceFile: 'PM_AbsoluteEnergy.pdf',
+      reportType: 'Absolute Energy',
+      maximumTimestamp: '01/06/2020 00:30:00',
+      maximumValue: 80,
+      unit: 'kWh',
+      peakRatio: 2.9,
+      isolatedPeak: false,
+      duplicateSeries: true,
+    }),
+  ]);
+
+  assert.equal(investigation.status, 'needs-evidence');
+  assert.equal(investigation.confidence.level, 'Low');
+  assert.ok(investigation.requests.some(request => request.label === 'Power Peak report'));
+  assert.ok(investigation.requests.some(request => request.label === 'Load Variance report'));
+  assert.match(investigation.summary, /will not promote a single-report anomaly/i);
+});
+
+test('correlates three aligned reports into a supported event pattern', () => {
+  const investigation = analyzeReportSet([
+    seriesReport({
+      sourceFile: 'PM_AbsoluteEnergy.pdf',
+      reportType: 'Absolute Energy',
+      maximumTimestamp: '01/06/2020 00:30:00',
+      maximumValue: 80,
+      unit: 'kWh',
+      peakRatio: 3.1,
+      duplicateSeries: true,
+    }),
+    seriesReport({
+      sourceFile: 'PM_PowerPeak.pdf',
+      reportType: 'Power Peak',
+      maximumTimestamp: '01/06/2020 00:45:00',
+      maximumValue: 1100,
+      unit: 'kW',
+      peakRatio: 27.7,
+    }),
+    seriesReport({
+      sourceFile: 'PM_LoadVariance.pdf',
+      reportType: 'Load Variance Analysis',
+      maximumTimestamp: '01/06/2020 01:00:00',
+      maximumValue: 1100,
+      unit: 'kW',
+      peakRatio: 27.7,
+    }),
+  ]);
+
+  assert.equal(investigation.status, 'correlated');
+  assert.equal(investigation.hypotheses[0].status, 'Supported pattern');
+  assert.match(investigation.title, /short-duration electrical event/i);
+  assert.match(investigation.eventWindow, /00:30.*01:00/i);
+  assert.ok(investigation.requests.some(request => request.label === 'Equipment schedule or operating-hours export'));
+  assert.ok(investigation.requests.some(request => request.label === 'Alarm, event, or meter log'));
+  assert.ok(!investigation.requests.some(request => request.label === 'Power Peak report'));
 });

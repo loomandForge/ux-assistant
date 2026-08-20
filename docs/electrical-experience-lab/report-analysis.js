@@ -37,6 +37,29 @@ const formatRatio = value =>
     maximumFractionDigits: 1,
   }).format(value);
 
+const parseTimestamp = value => {
+  const match = value.match(
+    /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})(?::(\d{2}))?$/,
+  );
+  if (!match) return null;
+  const [, day, month, year, hour, minute, second = '00'] = match;
+  return Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second),
+  );
+};
+
+const minutesBetween = (left, right) => {
+  const leftTime = parseTimestamp(left);
+  const rightTime = parseTimestamp(right);
+  if (leftTime === null || rightTime === null) return null;
+  return Math.abs(leftTime - rightTime) / 60000;
+};
+
 const shortTimestamp = value => {
   const [date, time] = value.split(' ');
   return `${time.slice(0, 5)} on ${date}`;
@@ -128,7 +151,30 @@ const calculateSeries = readings => {
   );
   const total = readings.reduce((sum, reading) => sum + reading.value, 0);
   const average = total / readings.length;
-  return { minimum, maximum, total, average, peakRatio: maximum.value / average };
+  const maximumIndex = readings.indexOf(maximum);
+  const neighbors = [readings[maximumIndex - 1], readings[maximumIndex + 1]].filter(Boolean);
+  const neighborAverage = neighbors.length
+    ? neighbors.reduce((sum, reading) => sum + reading.value, 0) / neighbors.length
+    : null;
+  const peakRatio = maximum.value / average;
+  const peakToNeighborRatio = neighborAverage ? maximum.value / neighborAverage : null;
+  const highIntervalCount = readings.filter(reading => reading.value >= average * 2).length;
+  const isolatedPeak =
+    peakRatio >= 3 &&
+    peakToNeighborRatio !== null &&
+    peakToNeighborRatio >= 2 &&
+    highIntervalCount <= Math.max(3, Math.ceil(readings.length * 0.08));
+
+  return {
+    minimum,
+    maximum,
+    total,
+    average,
+    peakRatio,
+    peakToNeighborRatio,
+    highIntervalCount,
+    isolatedPeak,
+  };
 };
 
 const joinCell = items =>
@@ -221,6 +267,20 @@ const makeSeriesAnalysis = ({ metadata, pages, sourceFile, totalPages, truncated
     location: identity.location,
     measurementPoint: identity.measurementPoint,
     unit: identity.unit,
+    compareTimeRange: metadata.compareTimeRange,
+    metrics: {
+      kind: 'series',
+      readingCount: readings.length,
+      average: statistics.average,
+      minimum: statistics.minimum,
+      maximum: statistics.maximum,
+      total: statistics.total,
+      peakRatio: statistics.peakRatio,
+      peakToNeighborRatio: statistics.peakToNeighborRatio,
+      highIntervalCount: statistics.highIntervalCount,
+      isolatedPeak: statistics.isolatedPeak,
+      duplicateSeries: identity.duplicateSeries,
+    },
     primary: {
       label: isEnergy ? 'Highest energy interval' : 'Highest demand interval',
       value: formatNumber(statistics.maximum.value),
@@ -268,6 +328,12 @@ const makeTotalEnergyAnalysis = ({ metadata, pages, sourceFile, totalPages, trun
     location: primaryRow.location,
     measurementPoint: primaryRow.measurementPoint,
     unit: primaryRow.unit,
+    compareTimeRange: metadata.compareTimeRange,
+    metrics: {
+      kind: 'total',
+      rows,
+      hasMixedUnits,
+    },
     primary: {
       label: 'Reported total energy',
       value: formatNumber(primaryRow.value),
@@ -317,6 +383,10 @@ const makeFallbackAnalysis = ({ metadata, pages, sourceFile, totalPages, truncat
   location: 'Not extracted',
   measurementPoint: 'Not extracted',
   unit: 'Not extracted',
+  compareTimeRange: metadata.compareTimeRange,
+  metrics: {
+    kind: 'metadata',
+  },
   primary: {
     label: 'Report recognized',
     value: String(totalPages),
@@ -348,6 +418,267 @@ const makeFallbackAnalysis = ({ metadata, pages, sourceFile, totalPages, truncat
     detail: 'The report header was read successfully. Device-level interpretation is not enabled.',
   },
 });
+
+const INVESTIGATION_REPORTS = [
+  {
+    reportType: 'Absolute Energy',
+    label: 'Absolute Energy report',
+    reason: 'Shows whether the event materially affected interval energy.',
+  },
+  {
+    reportType: 'Power Peak',
+    label: 'Power Peak report',
+    reason: 'Locates the highest demand event and its timestamp.',
+  },
+  {
+    reportType: 'Load Variance Analysis',
+    label: 'Load Variance report',
+    reason: 'Checks whether the demand event is isolated or sustained.',
+  },
+];
+
+const reportByType = (reports, reportType) =>
+  reports.find(report => report.reportType === reportType);
+
+const mostCommon = values => {
+  const counts = new Map();
+  for (const value of values.filter(Boolean)) {
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ?? 'Not found';
+};
+
+const reportSignal = report => {
+  if (!report || report.metrics?.kind !== 'series') return null;
+  return `${formatNumber(report.metrics.maximum.value)} ${report.unit} at ${shortTimestamp(report.metrics.maximum.timestamp)}`;
+};
+
+const makeReportRequests = (alignedReports, hasMatchedBaseline) => {
+  const missingReports = INVESTIGATION_REPORTS
+    .filter(required => !reportByType(alignedReports, required.reportType))
+    .map(required => ({
+      id: required.reportType.toLowerCase().replaceAll(/[^a-z0-9]+/g, '-'),
+      kind: 'report',
+      label: required.label,
+      format: 'PowerManager PDF for the same device and time range',
+      reason: required.reason,
+      priority: 'Needed for correlation',
+    }));
+
+  return [
+    ...missingReports,
+    ...(!hasMatchedBaseline
+      ? [{
+          id: 'matched-baseline',
+          kind: 'report',
+          label: 'Matched comparison report',
+          format: 'Absolute Energy PDF for the previous equivalent day or week',
+          reason: 'Confirms whether the pattern is a new change or normal behavior for this device.',
+          priority: 'Needed to confirm change',
+        }]
+      : []),
+    {
+      id: 'equipment-schedule',
+      kind: 'operational-data',
+      label: 'Equipment schedule or operating-hours export',
+      format: 'PDF export covering the event window',
+      reason: 'Identifies which scheduled load was expected to start at that time.',
+      priority: 'Needed to identify the trigger',
+    },
+    {
+      id: 'event-log',
+      kind: 'operational-data',
+      label: 'Alarm, event, or meter log',
+      format: 'PDF export covering 30 minutes before and after the event',
+      reason: 'Checks for start-up events, trips, resets, or meter anomalies.',
+      priority: 'Needed to confirm the cause',
+    },
+  ];
+};
+
+const makeEvidenceSet = reports =>
+  reports.map(report => ({
+    label: report.reportType,
+    value: reportSignal(report) ?? `${report.deviceName}, ${report.timeRange}`,
+    sourceFile: report.sourceFile,
+  }));
+
+const makePreliminaryHypotheses = ({ alignedReports, duplicateSeries }) => {
+  const seriesReports = alignedReports.filter(report => report.metrics?.kind === 'series');
+  const strongest = [...seriesReports].sort(
+    (left, right) => right.metrics.peakRatio - left.metrics.peakRatio,
+  )[0];
+
+  return [
+    {
+      id: 'short-duration-event',
+      rank: 1,
+      title: 'Short-duration electrical event',
+      status: strongest ? 'Plausible' : 'Insufficient evidence',
+      summary: strongest
+        ? `${strongest.reportType} contains a concentrated peak, but another aligned report is required before the pattern is treated as corroborated.`
+        : 'The uploaded reports do not yet contain a supported interval series.',
+      supportingEvidence: strongest
+        ? [`${strongest.reportType}: ${reportSignal(strongest)}.`, `${formatRatio(strongest.metrics.peakRatio)} times its report average.`]
+        : [],
+      conflictingEvidence: ['The event is not yet corroborated across energy, peak, and variance reports.'],
+      confirmationCheck: 'Add the requested reports for the same device and time range.',
+    },
+    {
+      id: 'data-configuration-issue',
+      rank: 2,
+      title: 'Data or report configuration issue',
+      status: duplicateSeries ? 'Plausible' : 'Insufficient evidence',
+      summary: duplicateSeries
+        ? 'A duplicated energy series could overstate aggregation if both columns are counted.'
+        : 'No duplicated series has been identified in the current evidence set.',
+      supportingEvidence: duplicateSeries
+        ? ['The Absolute Energy report contains two identical series labels and values.']
+        : [],
+      conflictingEvidence: ['No independent meter or configuration log has been supplied.'],
+      confirmationCheck: 'Verify the report series configuration and compare it with the meter log.',
+    },
+  ];
+};
+
+export const analyzeReportSet = reports => {
+  if (!reports.length) throw new Error('Add at least one report to start an investigation.');
+
+  const deviceName = mostCommon(
+    reports.map(report => report.deviceName).filter(value => !/^Not /.test(value)),
+  );
+  const timeRange = mostCommon(reports.map(report => report.timeRange));
+  const alignedReports = reports.filter(
+    report =>
+      report.timeRange === timeRange &&
+      (report.deviceName === deviceName || /^Not /.test(report.deviceName)),
+  );
+  const comparisonReports = reports.filter(
+    report =>
+      report.reportType === 'Absolute Energy' &&
+      report.deviceName === deviceName &&
+      report.timeRange !== timeRange,
+  );
+  const hasMatchedBaseline =
+    comparisonReports.length > 0 || alignedReports.some(report => report.compareTimeRange);
+  const absoluteEnergy = reportByType(alignedReports, 'Absolute Energy');
+  const powerPeak = reportByType(alignedReports, 'Power Peak');
+  const loadVariance = reportByType(alignedReports, 'Load Variance Analysis');
+  const seriesReports = [absoluteEnergy, powerPeak, loadVariance].filter(Boolean);
+  const duplicateSeries = Boolean(absoluteEnergy?.metrics?.duplicateSeries);
+  const peakTimes = seriesReports
+    .map(report => report.metrics?.maximum?.timestamp)
+    .filter(Boolean);
+  const peakSpreadMinutes = peakTimes.length > 1
+    ? Math.max(
+        ...peakTimes.flatMap((timestamp, index) =>
+          peakTimes.slice(index + 1).map(other => minutesBetween(timestamp, other) ?? Infinity),
+        ),
+      )
+    : null;
+  const fullCorrelation =
+    seriesReports.length === 3 &&
+    peakSpreadMinutes !== null &&
+    peakSpreadMinutes <= 45 &&
+    seriesReports.filter(report => report.metrics?.isolatedPeak).length >= 2;
+
+  const hypotheses = fullCorrelation
+    ? [
+        {
+          id: 'short-duration-event',
+          rank: 1,
+          title: 'Short-duration electrical event',
+          status: 'Supported pattern',
+          summary: `Three aligned reports show concentrated peaks within a ${formatNumber(peakSpreadMinutes)}-minute window. The exact equipment or operating trigger is not identified in the PDFs.`,
+          supportingEvidence: seriesReports.map(
+            report => `${report.reportType}: ${reportSignal(report)}.`,
+          ),
+          conflictingEvidence: [
+            'No equipment schedule, event log, or device hierarchy identifies what switched on.',
+          ],
+          confirmationCheck: 'Match the event window to the equipment schedule and alarm or meter log.',
+        },
+        {
+          id: 'data-configuration-issue',
+          rank: 2,
+          title: 'Data or report configuration issue',
+          status: duplicateSeries ? 'Plausible contributor' : 'Insufficient evidence',
+          summary: duplicateSeries
+            ? 'The duplicated Absolute Energy series may affect totals, but aligned demand reports indicate that an electrical event also occurred.'
+            : 'No duplicated series has been identified in the aligned reports.',
+          supportingEvidence: duplicateSeries
+            ? ['Two Absolute Energy columns have the same device, measurement point, unit, and readings.']
+            : [],
+          conflictingEvidence: [
+            'Power Peak and Load Variance independently show aligned high-demand readings.',
+          ],
+          confirmationCheck: 'Verify whether the duplicate columns represent one series or two configured channels.',
+        },
+        {
+          id: 'extended-operating-schedule',
+          rank: 3,
+          title: 'Extended operating schedule',
+          status: 'Not supported yet',
+          summary: 'The current reports show a concentrated event rather than enough evidence of a sustained schedule extension.',
+          supportingEvidence: [],
+          conflictingEvidence: [
+            'No matched baseline or operating-hours export is present.',
+            'At least two reports classify the highest reading as an isolated peak.',
+          ],
+          confirmationCheck: 'Compare a matched prior period and inspect the equipment operating-hours export.',
+        },
+      ]
+    : makePreliminaryHypotheses({ alignedReports, duplicateSeries });
+
+  const requests = makeReportRequests(alignedReports, hasMatchedBaseline);
+  const excludedReports = reports.filter(
+    report => !alignedReports.includes(report) && !comparisonReports.includes(report),
+  );
+
+  return {
+    status: fullCorrelation ? 'correlated' : 'needs-evidence',
+    title: fullCorrelation
+      ? 'A short-duration electrical event is the best-supported pattern.'
+      : 'More evidence is needed before a root-cause pattern can be supported.',
+    summary: fullCorrelation
+      ? `The event is corroborated for ${deviceName} across Absolute Energy, Power Peak, and Load Variance. Operational evidence is still required to identify the exact cause.`
+      : `${alignedReports.length} aligned report${alignedReports.length === 1 ? '' : 's'} were found for ${deviceName}. The app will not promote a single-report anomaly into a root-cause claim.`,
+    confidence: {
+      level: fullCorrelation ? 'Medium-high' : 'Low',
+      rationale: fullCorrelation
+        ? 'The electrical pattern is corroborated across three reports, while the operational trigger remains unknown.'
+        : 'The current evidence set cannot independently confirm the anomaly type and its cause.',
+    },
+    deviceName,
+    timeRange,
+    reportCount: reports.length,
+    alignedReportCount: alignedReports.length,
+    excludedReportCount: excludedReports.length,
+    reportTypes: alignedReports.map(report => report.reportType),
+    eventWindow: fullCorrelation
+      ? `${shortTimestamp(peakTimes[0])} to ${shortTimestamp(peakTimes[peakTimes.length - 1])}`
+      : 'Not established',
+    evidence: [
+      ...makeEvidenceSet(alignedReports),
+      ...comparisonReports.map(report => ({
+        label: 'Matched baseline candidate',
+        value: `${report.reportType}, ${report.timeRange}`,
+        sourceFile: report.sourceFile,
+      })),
+    ],
+    hypotheses,
+    requests,
+    unknowns: [
+      'The exact equipment or process that caused the event is not identified.',
+      ...(!hasMatchedBaseline
+        ? ['The current report set does not include a matched prior period.']
+        : []),
+      ...(excludedReports.length
+        ? [`${excludedReports.length} uploaded report${excludedReports.length === 1 ? ' was' : 's were'} excluded because the device or time range did not align.`]
+        : []),
+    ],
+  };
+};
 
 export const analyzeExtractedReport = ({ pages, sourceFile, totalPages }) => {
   const metadata = findMetadata(pages);
